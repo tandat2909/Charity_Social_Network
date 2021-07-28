@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
-
+from . import configLocal
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -77,9 +77,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'charitysocialnetworkdb',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': ''
+        'USER': configLocal.userDB,
+        'PASSWORD': configLocal.passwordDB,
+        'HOST': configLocal.hostDB
     }
 }
 
