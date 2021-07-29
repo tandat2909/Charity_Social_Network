@@ -76,7 +76,7 @@ AUTH_USER_MODEL = "AppCharitySocialNetwork.User"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'charitysocialnetworkdb',
+        'NAME': configLocal.db,
         'USER': configLocal.userDB,
         'PASSWORD': configLocal.passwordDB,
         'HOST': configLocal.hostDB

@@ -16,3 +16,6 @@ class Index(View):
 class UserAPI(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+class ImportData(View):
+    pass
