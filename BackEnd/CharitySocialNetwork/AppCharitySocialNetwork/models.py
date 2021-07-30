@@ -86,11 +86,11 @@ class Report(ModelBase):
 
 
 class AuctionItem(ModelBase):
-    price_start = models.DecimalField(max_digits=10, decimal_places=2)
-    price_received = models.DecimalField(max_digits=10, decimal_places=2, default=0, blank=True)
-    provider = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='auction_provider')
+    price_start = models.DecimalField(max_digits=50, decimal_places=2,default=0)
+    price_received = models.DecimalField(max_digits=50, decimal_places=2, default=0, blank=True)
     receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='auction_receiver',
                                  blank=True)
+    post = models.ForeignKey(NewsPost, on_delete=models.SET_NULL, null=True)
 
 
 class Transaction(ModelBase):
@@ -102,6 +102,12 @@ class Transaction(ModelBase):
 
     def __str__(self):
         return self.order_id + "-" + self.message
+
+    def get_order_id(self):
+        return self.order_id
+
+    def get_user(self):
+        return self.provider
 
 
 class EmotionType(ModelBase):
@@ -155,12 +161,12 @@ class Hashtag(ModelBase):
 class HistoryAuction(ModelBase):
     name = None
     image = None
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=50, decimal_places=2)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    item = models.ForeignKey(AuctionItem, on_delete=models.CASCADE)
+    post = models.ForeignKey(NewsPost, on_delete=models.CASCADE,default=None)
 
     def __str__(self):
-        return self.user.get_full_name() + " : " + self.item.name + " -> " + str(self.price)
+        return self.user.get_full_name() + " : " + self.post.title + " -> " + str(self.price)
 
     class Meta:
-        ordering = ["item", "price", "user"]
+        ordering = ["post", "price", "user"]
