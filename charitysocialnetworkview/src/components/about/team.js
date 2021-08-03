@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import TeamWrap from './team-wrap';
+
 
 
 class Team extends Component {
@@ -11,103 +13,31 @@ class Team extends Component {
                             <h3 className="title-big">Happy Volunteers</h3>
                         </div>
                         <div className="team-row mt-md-5 mt-4">
-                            <div className="team-wrap">
-                                <div className="team-member text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team1.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Luke jacobs</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
-                            <div className="team-wrap">
-                                <div className="team-member text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team2.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Claire olson</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
-                            <div className="team-wrap">
-                                <div className="team-member last text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team3.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Phillip hunt</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
-                            <div className="team-wrap">
-                                <div className="team-member last text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team4.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Sara grant</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
-                            <div className="team-wrap">
-                                <div className="team-member last text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team5.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Sara grant</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
-                            <div className="team-wrap">
-                                <div className="team-member last text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team6.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Sara grant</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
-                            <div className="team-wrap">
-                                <div className="team-member last text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team7.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Sara grant</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
-                            <div className="team-wrap">
-                                <div className="team-member last text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team8.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Sara grant</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
-                            <div className="team-wrap">
-                                <div className="team-member last text-center">
-                                    <div className="team-img">
-                                        <img src={process.env.PUBLIC_URL + '/images/team9.jpg'} alt="" className="radius-image img-fluid" />
-                                    </div>
-                                    <a href="#url" className="team-title">Sara grant</a>
-                                    <p>Volunteers</p>
-                                </div>
-                            </div>
+                            <TeamWrap></TeamWrap>
 
 
                             <div className="team-apply">

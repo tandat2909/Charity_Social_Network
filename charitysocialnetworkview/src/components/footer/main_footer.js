@@ -19,7 +19,7 @@ class Footer extends Component{
                             </div>
                         </div>
                         
-                        <button onClick="topFunction()" id="movetop" title="Go to top">
+                        <button  id="movetop" title="Go to top">
                             &uarr;
                         </button>
                         

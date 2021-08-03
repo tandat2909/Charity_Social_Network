@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import BannerImage from './banner-bottom-shape';
 
 
+
 class Banner extends Component {
     render() {
         return (
