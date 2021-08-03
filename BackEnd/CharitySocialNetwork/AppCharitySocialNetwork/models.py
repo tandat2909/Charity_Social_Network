@@ -27,10 +27,11 @@ class User(AbstractUser):
     class Meta:
         ordering = ['id']
 
+
     nick_name = models.CharField(max_length=255, null=True)
     phone_number = models.CharField(max_length=10, null=True)
     address = models.CharField(max_length=255, null=True)
-    avatar = models.ImageField(upload_to='uploads/', null=True)
+    avatar = models.ImageField(upload_to='images/%y/%M/%d/', null=True)
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10, choices=typeGender, default=0)
 
@@ -47,12 +48,13 @@ class NewsPost(ModelBase):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, )
     category = models.ForeignKey(NewsCategory, on_delete=models.SET_NULL, null=True, related_name='category')
     hashtag = models.ManyToManyField('Hashtag', related_name='news_post', related_query_name='hashtags', blank=True)
-
+    is_show = models.BooleanField(default=False,help_text="Chỉ người duyệt bài mới cho phép thay đổi")
     def __str__(self):
         return self.title
 
     class Meta:
         unique_together = ("title",)
+        ordering = ['-created_date']
 
 
 class Comment(ModelBase):
@@ -72,6 +74,9 @@ class Comment(ModelBase):
 class OptionReport(models.Model):
     content = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.content
+
 
 class Report(ModelBase):
     name = None
@@ -86,11 +91,14 @@ class Report(ModelBase):
 
 
 class AuctionItem(ModelBase):
-    price_start = models.DecimalField(max_digits=50, decimal_places=2,default=0)
+    price_start = models.DecimalField(max_digits=50, decimal_places=2, default=0)
     price_received = models.DecimalField(max_digits=50, decimal_places=2, default=0, blank=True)
     receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='auction_receiver',
                                  blank=True)
     post = models.ForeignKey(NewsPost, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        unique_together =('post',)
 
 
 class Transaction(ModelBase):
@@ -163,7 +171,7 @@ class HistoryAuction(ModelBase):
     image = None
     price = models.DecimalField(max_digits=50, decimal_places=2)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    post = models.ForeignKey(NewsPost, on_delete=models.CASCADE,default=None)
+    post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, default=None)
 
     def __str__(self):
         return self.user.get_full_name() + " : " + self.post.title + " -> " + str(self.price)

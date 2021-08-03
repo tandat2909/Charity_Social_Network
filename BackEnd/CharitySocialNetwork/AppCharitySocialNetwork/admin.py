@@ -3,6 +3,7 @@ from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, Permission
 from django.template.response import TemplateResponse
 from django.urls import path
+from rest_framework.authtoken.models import Token
 
 from .models import *
 
@@ -19,6 +20,11 @@ class UserAdminCustom(UserAdmin):
         return super().get_fieldsets(request, obj) + (
             (('Personal Custom'), {'fields': ('phone_number', 'gender')}),
         )
+
+
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ("name", "codename", "content_type")
+    list_filter = ("content_type",)
 
 
 class EmotionAdmin(admin.ModelAdmin):
@@ -67,7 +73,6 @@ class HashtagInlinePost(admin.StackedInline):
 
 
 class PostAdmin(admin.ModelAdmin):
-
     inlines = [HashtagInlinePost, ]
 
 
@@ -75,7 +80,7 @@ class PostAdmin(admin.ModelAdmin):
 customAdminSite = CustomAdminSite(name='Charity Social Network')
 customAdminSite.register(User, UserAdminCustom)
 customAdminSite.register(Group, GroupAdmin)
-customAdminSite.register(Permission)
+customAdminSite.register(Permission,PermissionAdmin)
 customAdminSite.register(
     [
         EmotionType,
@@ -90,4 +95,4 @@ customAdminSite.register(
     ])
 customAdminSite.register(EmotionPost, EmotionPOSTAdmin)
 customAdminSite.register(EmotionComment, EmotionContentAdmin)
-customAdminSite.register(NewsPost,PostAdmin)
+customAdminSite.register(NewsPost, PostAdmin)
