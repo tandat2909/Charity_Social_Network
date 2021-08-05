@@ -3,6 +3,7 @@ from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, Permission
 from django.template.response import TemplateResponse
 from django.urls import path
+from oauth2_provider.models import AccessToken
 from rest_framework.authtoken.models import Token
 
 from .models import *
@@ -74,6 +75,7 @@ class HashtagInlinePost(admin.StackedInline):
 
 class PostAdmin(admin.ModelAdmin):
     inlines = [HashtagInlinePost, ]
+    list_display = ['id','title','user_id','user','category','is_show','active']
 
 
 # admin.site.register(User, UserAdmin)

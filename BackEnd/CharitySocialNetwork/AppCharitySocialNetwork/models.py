@@ -91,6 +91,9 @@ class Report(ModelBase):
 
 
 class AuctionItem(ModelBase):
+    name = None
+    image = None
+    description = None
     price_start = models.DecimalField(max_digits=50, decimal_places=2, default=0)
     price_received = models.DecimalField(max_digits=50, decimal_places=2, default=0, blank=True)
     receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='auction_receiver',
@@ -99,6 +102,9 @@ class AuctionItem(ModelBase):
 
     class Meta:
         unique_together =('post',)
+
+    def __str__(self):
+        return str(self.id )
 
 
 class Transaction(ModelBase):

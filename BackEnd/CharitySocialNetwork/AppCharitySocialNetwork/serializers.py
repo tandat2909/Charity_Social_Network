@@ -62,7 +62,6 @@ class UserRegisterSerializer(ModelSerializer):
         }
 
     def create(self, validated_data):
-
         u = User(**validated_data)
         u.set_password(u.password)
         u.save()
@@ -124,9 +123,63 @@ class PostSerializer(ModelSerializer):
     category = CategoryPostSerializer()
     hashtag = HashtagsSerializer(many=True)
 
+    class Meta(BaseMeta):
+        model = NewsPost
+        extra_kwargs = {
+            'active': {'write_only': True},
+            'is_show': {'write_only': True},
+            'id': {'read_only': True},
+        }
+
+
+class AuctionItemSerializer(ModelSerializer):
+    class Meta(BaseMeta):
+        model = AuctionItem
+        fields = ["id", "post", "price_start"]
+        extra_kwargs = {
+            "id": {"read_only": True}
+        }
+
+
+class PostCreateSerializer(ModelSerializer):
+    price_start = DecimalField(required=False, max_digits=50, decimal_places=2)
+
+    # user_id = HiddenField(default=None)
+
     class Meta:
         model = NewsPost
-        fields = '__all__'
+        fields = ["id", "category", "hashtag", "description", "content", "title", 'price_start', "user",'image']
+        read_only_fields = ["user", ]
+        extra_kwargs = {
+            'id': {'read_only': True},
+
+        }
+
+    def create(self, validated_data, **kwargs):
+        print(validated_data)
+        data_auction = {"price_start": validated_data.pop("price_start", None)}
+        print(data_auction)
+        if data_auction.get("price_start"):
+            instance_news_post = super().create(validated_data)
+            data_auction["post"] = instance_news_post.id
+            try:
+                serializer_auction = AuctionItemSerializer(data=data_auction)
+                serializer_auction.is_valid(raise_exception=True)
+                serializer_auction.save()
+            except Exception as ex:
+                instance_news_post.delete()
+                raise ex
+            return instance_news_post
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        price_start = validated_data.pop("price_start", None)
+        if price_start is not None:
+            ai = AuctionItem.objects.get(post_id=instance.id)
+            ai.price_start = price_start
+            ai.save()
+        return super().update(instance, validated_data)
 
 
 class EmotionTypeSerializer(ModelSerializer):
@@ -153,6 +206,7 @@ class HistoryAuctionSerializer(ModelSerializer):
 class OptionReportSerializer(ModelSerializer):
     class Meta(BaseMeta):
         model = OptionReport
+        filter = None
 
 
 class ReportSerializer(ModelSerializer):

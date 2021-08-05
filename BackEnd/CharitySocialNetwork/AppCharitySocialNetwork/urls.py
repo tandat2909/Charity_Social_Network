@@ -5,7 +5,7 @@ from rest_framework import routers
 router = routers.DefaultRouter()
 router.register('accounts', views.UserView)
 router.register('newspost', views.PostAPI)
-router.register('optionreport', views.OptionReportAPI)
+router.register('optionreport', views.ReportAPI)
 
 
 # from .admin import customAdminSite
