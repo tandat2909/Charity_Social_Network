@@ -80,7 +80,7 @@ class PostAdmin(admin.ModelAdmin):
 
 # admin.site.register(User, UserAdmin)
 customAdminSite = CustomAdminSite(name='Charity Social Network')
-customAdminSite.register(User, UserAdminCustom)
+customAdminSite.register(User,)
 customAdminSite.register(Group, GroupAdmin)
 customAdminSite.register(Permission,PermissionAdmin)
 customAdminSite.register(
@@ -88,12 +88,12 @@ customAdminSite.register(
         EmotionType,
         NewsCategory,
         Comment,
-        Report,
+        ReportPost,
         AuctionItem,
         Transaction,
         OptionReport,
         Hashtag,
-        HistoryAuction
+        HistoryAuction,ReportUser
     ])
 customAdminSite.register(EmotionPost, EmotionPOSTAdmin)
 customAdminSite.register(EmotionComment, EmotionContentAdmin)

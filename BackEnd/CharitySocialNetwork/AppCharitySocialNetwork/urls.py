@@ -4,8 +4,9 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 router.register('accounts', views.UserView)
-router.register('newspost', views.PostAPI)
-router.register('optionreport', views.ReportAPI)
+router.register('newspost', views.PostViewSet)
+router.register('optionreport', views.ReportViewSet)
+router.register('emotion',views.EmotionViewSet)
 
 
 # from .admin import customAdminSite

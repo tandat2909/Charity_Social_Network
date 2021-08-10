@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, OR
 
 
 class PermissionUserViewInfo(IsAuthenticated):
@@ -13,7 +13,7 @@ class PermissionUserChange(IsAuthenticated):
                and request.user.has_perm('AppCharitySocialNetwork.change_user')
 
 
-class PermissionUserReport(IsAuthenticated):
+class PermissionUserReport(IsAuthenticated, ):
     def has_permission(self, request, view):
         return super().has_permission(request, view) \
                and request.user.has_perms([
@@ -25,9 +25,10 @@ class PermissionUserReport(IsAuthenticated):
 
 
 class PermissionUserMod(IsAuthenticated):
-    def has_permission(self, request, view):
-        return super().has_permission(request, view) \
-               and request.user.has_perms([
-            'AppCharitySocialNetwork.mod',
 
-        ])
+    def has_permission(self, request, view):
+        return (super().has_permission(request, view)
+                and request.user.has_perms([
+                    'AppCharitySocialNetwork.mod',
+
+                ]))

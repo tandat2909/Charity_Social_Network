@@ -27,18 +27,19 @@ class User(AbstractUser):
     class Meta:
         ordering = ['id']
 
-
     nick_name = models.CharField(max_length=255, null=True)
     phone_number = models.CharField(max_length=10, null=True)
     address = models.CharField(max_length=255, null=True)
     avatar = models.ImageField(upload_to='images/%y/%M/%d/', null=True)
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10, choices=typeGender, default=0)
+  
 
 
 class NewsCategory(ModelBase):
     class Meta:
         unique_together = ("name",)
+        ordering = ['created_date']
 
 
 class NewsPost(ModelBase):
@@ -47,14 +48,17 @@ class NewsPost(ModelBase):
     title = models.CharField(max_length=255)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, )
     category = models.ForeignKey(NewsCategory, on_delete=models.SET_NULL, null=True, related_name='category')
-    hashtag = models.ManyToManyField('Hashtag', related_name='news_post', related_query_name='hashtags', blank=True)
-    is_show = models.BooleanField(default=False,help_text="Chỉ người duyệt bài mới cho phép thay đổi")
+    hashtag = models.ManyToManyField('Hashtag', blank=True)
+    is_show = models.BooleanField(default=False, help_text="Chỉ người duyệt bài mới cho phép thay đổi")
+    comments = models.ManyToManyField('Comment', blank=True, related_query_name="comments")
+    reports = models.ManyToManyField('ReportPost', blank=True, related_query_name="reports")
+
     def __str__(self):
         return self.title
 
     class Meta:
         unique_together = ("title",)
-        ordering = ['-created_date']
+    # ordering = ['-created_date']
 
 
 class Comment(ModelBase):
@@ -62,10 +66,9 @@ class Comment(ModelBase):
     image = None
     description = None
     content = models.TextField()
-    user = models.ForeignKey(User, on_delete=models.SET_NULL,
-                             related_name='comment', related_query_name='my_comment', null=True)
-    comment_parent = models.ForeignKey('Comment', on_delete=models.CASCADE, null=True, blank=True)
-    newspost = models.ForeignKey(NewsPost, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    comment_child = models.ManyToManyField('Comment', blank=True)
+
 
     def __str__(self):
         return self.content
@@ -78,16 +81,28 @@ class OptionReport(models.Model):
         return self.content
 
 
-class Report(ModelBase):
+class ReportPost(ModelBase):
     name = None
     description = None
-    content = models.TextField()
+    content = models.TextField(null=True,blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user')
     post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, related_name='post')
     reason = models.ForeignKey(OptionReport, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return self.content
+
+
+class ReportUser(ModelBase):
+    name = None
+    description = None
+    content = models.TextField()
+    user_report = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_report')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    reason = models.ForeignKey(OptionReport, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return self.user.get_full_name() + " => " + self.user_report.get_full_name()
 
 
 class AuctionItem(ModelBase):
@@ -101,10 +116,10 @@ class AuctionItem(ModelBase):
     post = models.ForeignKey(NewsPost, on_delete=models.SET_NULL, null=True)
 
     class Meta:
-        unique_together =('post',)
+        unique_together = ('post',)
 
     def __str__(self):
-        return str(self.id )
+        return str(self.id)
 
 
 class Transaction(ModelBase):
@@ -134,7 +149,6 @@ class Emotion(ModelBase):
     name = None
     emotion_type = models.ForeignKey(EmotionType,
                                      on_delete=models.SET_NULL,
-                                     related_query_name="emotion_type",
                                      null=True,
 
                                      )
