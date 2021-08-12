@@ -1,3 +1,7 @@
+import datetime
+
+import django.utils.datetime_safe
+import pytz
 import rest_framework.exceptions
 from django.contrib.auth import authenticate, login, logout, decorators
 from django.db.models import Q, Count
@@ -20,11 +24,14 @@ from .paginators import PostPagePagination
 from .permission import *
 from .serializers import *
 from rest_framework import viewsets, views, generics, permissions, status
+from oauth2_provider.models import Application
 
 
 class Index(View):
     def get(self, request):
-        return HttpResponse('Chào mừng bạn tới API Từ Thiện')
+        o = Application.objects.get(pk=1)
+
+        return render(request, template_name="index.html", context={"oauth2": o})
 
 
 class Login(View):
@@ -60,6 +67,10 @@ class BaseViewAPI:
          """
         return bool(str(request.user.id) == pk)
 
+    def is_instance_of_user(self, request, instance=None):
+        instance = instance or self.get_object()
+        return bool(request.user.is_authenticated and request.user.id == instance.user.id)
+
     def delete_custom(self, request=None, instance=None, *args, **kwargs):
         instance = instance or self.get_object()
         instance.active = False
@@ -78,6 +89,19 @@ class BaseViewAPI:
             return super().get_parsers()
         except:
             return super().get_parsers()
+
+    def is_between_time(self, start, end, intime=datetime.datetime.now(pytz.utc)):
+        print(start, end, intime)
+
+        if start <= intime <= end:
+            return True
+        elif start > end:
+            end_day = datetime.time(hour=23, minute=59, second=59, microsecond=999999)
+            if start <= intime <= end_day:
+                return True
+            elif intime <= end:
+                return True
+        return False
 
 
 class UserView(BaseViewAPI, GenericViewSet, CreateModelMixin, UpdateModelMixin):
@@ -104,6 +128,8 @@ class UserView(BaseViewAPI, GenericViewSet, CreateModelMixin, UpdateModelMixin):
             return UserChangePasswordSerializer
         if self.action == 'create':
             return UserRegisterSerializer
+        if self.action in ['create_report', ]:
+            return ReportUserCreateSerializer
         return UserSerializer
 
     # def create(self, request, *args, **kwargs):
@@ -153,6 +179,16 @@ class UserView(BaseViewAPI, GenericViewSet, CreateModelMixin, UpdateModelMixin):
             return Response(UserSerializer(self.queryset.get(pk=pk)).data, status.HTTP_200_OK)
         return Response(UserSerializer(request.user).data, status.HTTP_200_OK)
 
+    @action(methods=["POST"], detail=False, url_path="report")
+    def create_report(self, request, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get("user_report").id == request.user.id:
+            raise rest_framework.exceptions.ValidationError({"Error": "Bạn không thể report chính bạn"})
+        instance = serializer.save(**{"user": request.user})
+        return Response(ReportUserSerializer(instance, context={"request": request}).data,
+                        status=status.HTTP_200_OK)
+
 
 class EmotionViewBase:
 
@@ -183,7 +219,7 @@ class EmotionViewBase:
 
     def get_serializer_statistical_emotion_post(self, post_id, **kwargs):
         request = kwargs.get("request", None)
-        return EmotionTypeSerializer(self.statistical_emotion_post(post_id), many=True, context={
+        return EmotionStatisticalSerializer(self.statistical_emotion_post(post_id), many=True, context={
             'request': request or self.request
         })
 
@@ -194,23 +230,33 @@ class EmotionViewBase:
         :param kwargs:
         :return:
         """
-        return EmotionPostSerializer(self.detail_emotions_post(post_id, **kwargs), many=True)
 
-    def create_or_update_emotion(self, data, **kwargs):
+        return EmotionPostSerializer(self.detail_emotions_post(post_id, **kwargs), many=True,
+                                     context={"request": self.request})
+
+    def create_or_update_emotion(self, data, models, **kwargs):
+        '''
+            lấy emotion type id ra kiểm tra nó có tồn tại không
+            - lấy thông tin emotion post ra nếu có thì cập nhật lại cái type mới nếu không có tạo mới
+        :param data:
+        :param kwargs:
+        :return:
+        '''
         emotion_type = data.pop("emotion_type_id")
         assert EmotionType.objects.get(id=emotion_type)
         instance = None
         try:
-            instance = EmotionPost.objects.get(**data)
+            instance = models.objects.get(**data)
             instance.emotion_type_id = emotion_type
             instance.save()
-        except EmotionPost.DoesNotExist:
-            instance = EmotionPost.objects.create(**data, emotion_type_id=emotion_type)
+        except models.DoesNotExist:
+            instance = models.objects.create(**data, emotion_type_id=emotion_type)
+            self.get_object().emotions.add(instance)
 
         return instance
 
 
-class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
+class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     queryset = NewsPost.objects.filter(active=True)
     # serializer_class = PostSerializer
     # lookup_field = {'pk', 'user_id', "user_name", "title"}
@@ -245,13 +291,15 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ['list', 'get_comments', 'get_emotion_post']:
+        if self.action in ['list', 'get_comments', 'get_emotion_post', 'retrieve']:
             return [permissions.AllowAny(), ]
         if self.action in ["is_post_allowed", "get_list_pending_post"]:
             return [OR(PermissionUserMod(), IsAdminUser()), ]
         return [permissions.IsAuthenticated(), ]
 
     def get_serializer_class(self):
+        # if self.action in ["retrieve", ]:
+        #     return PostDetailSerializer
         if self.action in ['list', ]:
             return PostListSerializer
         if self.action in ['create_or_update_or_delete_emotion_post', ]:
@@ -269,6 +317,28 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
         if self.action in ['set_auctioneer_winning', 'offer_item']:
             return None
         return PostSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        if self.is_instance_of_user(request, self.get_object()):
+            return Response(PostDetailSerializer(self.get_object(), context={"request": request}).data,
+                            status=status.HTTP_200_OK)
+        data = self.get_serializer(self.get_object()).data.copy()
+        data["historyauction"] = []
+        try:
+            if request.user.is_authenticated and AuctionItem.objects.filter(post=self.get_object().id).exist():
+                instance_history_auction_of_user_current = HistoryAuction.objects.get(user=request.user.id,
+                                                                                      post=self.get_object().id)
+                his_auc_dic = OrderedDict()
+                his_auc_dic["id"] = instance_history_auction_of_user_current.id
+                his_auc_dic["price"] = instance_history_auction_of_user_current.price
+                his_auc_dic["user"] = instance_history_auction_of_user_current.user
+                his_auc_dic["created_date"] = instance_history_auction_of_user_current.created_date
+                data["historyauction"] = [his_auc_dic, ]
+                print(data)
+        except HistoryAuction.DoesNotExist:
+            print("user không đấu giá")
+        finally:
+            return Response(data, status=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs):
         """
@@ -339,9 +409,8 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(**{"user": request.user})
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        instance = serializer.save(**{"user": request.user})
+        return Response(PostSerializer(instance, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -362,7 +431,7 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
     def get_post_by_user(self, request, *args, **kwargs):
         '''
             Trả về tất cả bài viết của user đang đăng nhập bao gồm các bài chưa duyệt của user
-
+            Cần đăng nhập tài khoản user
         '''
         queryset = self.filter_queryset(self.get_queryset().filter(user=request.user.id))
         page = self.paginate_queryset(queryset)
@@ -374,6 +443,10 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
 
     @action(methods=["GET"], detail=False, url_path="list_pending_post")
     def get_list_pending_post(self, request):
+        """
+            Cần đăng nhập tài khoản user mod (tài khoản duyệt bài)
+
+        """
         queryset = self.filter_queryset(self.get_queryset().filter(is_show=False))
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -405,12 +478,15 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
     @action(methods=["POST"], detail=True, url_path="comment")
     def create_comment(self, request, pk, **kwargs):
         """
+
             tạo comment bài viết
             <b>Param</b>
                 có 2 tham số:
                 + content: nội dung content
                 + comment_parent: <comment_id>
                 lưu ý: Nếu không để tham số comment_parent mặc định tạo comment cho bài viết ngược lại nếu có sẽ tạo comment con cho comment
+            <b>Require</b>
+                + Yêu cầu đăng nhập
         """
         comment_parent = request.data.pop("comment_parent", None)
         serializer_comment = CommentCreateSerializer(data=request.data)
@@ -443,7 +519,7 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
             'data': serializer_emotion_post.data
         }, status=status.HTTP_200_OK)
 
-    @action(methods=["GET"], detail=True, url_path='emotions', name="emotions")
+    @action(methods=["PATCH"], detail=True, url_path='emotions', name="emotions")
     def create_or_update_or_delete_emotion_post(self, request, pk, **kwargs):
         """
         <pre>
@@ -464,7 +540,6 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
         """
         if request.query_params.get("action", '').__eq__('delete'):
             ins = EmotionPost.objects.get(author_id=request.user.id, post_id=self.get_object().id).delete()
-            print(ins)
             return Response(status=status.HTTP_204_NO_CONTENT)
         data = {
             'author_id': request.user.id or None,
@@ -472,8 +547,9 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
             'emotion_type_id': request.query_params.get("emotion_type", None),
         }
         try:
-            instance_emotion = super().create_or_update_emotion(data)
-            return Response(data=EmotionPostSerializer(instance_emotion).data, status=status.HTTP_200_OK)
+            instance_emotion = self.create_or_update_emotion(data, EmotionPost)
+            return Response(data=EmotionPostSerializer(instance_emotion, context={"request": request}).data,
+                            status=status.HTTP_200_OK)
         except EmotionType.DoesNotExist:
             raise rest_framework.exceptions.NotFound("Emotion type not exist")
 
@@ -498,19 +574,23 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
                 + history_auction: history_auction_id:int id lịch sử người đấu giá
         </pre>
         """
-
-        if request.user.id is not self.get_object().user.id:
+        # kiểm tra có phải bài viết của user không
+        if not self.is_instance_of_user(request, self.get_object()):
             raise PermissionDenied()
         try:
-
+            # kiểm tra request có gửi phiếu đấu giá lên không
             history_auction_id = request.data.get("history_auction", None)
             if history_auction_id is None or type(history_auction_id) is not int:
                 raise rest_framework.exceptions.ValidationError(
                     "Require history_auction_id not none and Require history_auction_id is Integer")
+            # lấy phiếu đấu giá đồng thời kiểm tra nó tồn tại không
             instance_history_auction = HistoryAuction.objects.get(pk=history_auction_id)
+            # lấy phiên đấu giá đông thời kiểm tra nó có phải bài viết đấu giá không
             instance_auction_item = AuctionItem.objects.get(post=self.get_object().id)
+            # pass 2 điều kiện trên gán người chiến thắng và giá người chiến thắng đưa ra
             instance_auction_item.receiver = instance_history_auction.user
             instance_auction_item.price_received = instance_history_auction.price
+
             instance_history_auction.save()
             return Response(AuctionItemSerializer(instance_auction_item).data, status=status.HTTP_200_OK)
         except AuctionItem.DoesNotExist:
@@ -524,9 +604,11 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
     def offer_item(self, request, pk, **kwargs):
         offer = request.data.get("offer", None)
         if offer is None:
-            raise rest_framework.exceptions.NotFound({"offer":"field is not empty"})
+            raise rest_framework.exceptions.NotFound({"offer": "field is not empty"})
         try:
             instance_auction_item = AuctionItem.objects.get(post=self.get_object().id)
+            if not self.is_between_time(instance_auction_item.start_datetime, instance_auction_item.end_datetime):
+                raise rest_framework.exceptions.ValidationError({"error": "Phiên đấu giá đã kết thúc"})
             if offer <= instance_auction_item.price_start:
                 raise rest_framework.exceptions.ValidationError(
                     {"offer": "offer không hợp lệ giá phải lớn hơn hoặc bằng giá khởi điểm"})
@@ -535,7 +617,7 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
                 "price": offer,
                 "post": self.get_object().id
             }
-            serializer_history = HistoryAuctionSerializer(data=history_data)
+            serializer_history = HistoryAuctionCreateSerializer(data=history_data)
             serializer_history.is_valid(raise_exception=True)
             serializer_history.save()
             return Response(serializer_history.data, status=status.HTTP_200_OK)
@@ -545,27 +627,68 @@ class PostViewSet(BaseViewAPI, ModelViewSet, EmotionViewBase):
 
 # end Report
 
-
 class ReportViewSet(ListModelMixin, GenericViewSet):
     queryset = OptionReport.objects.all()
     serializer_class = OptionReportSerializer
     permission_classes = [PermissionUserReport]
 
-    # todo api cần làm
-    # get list option report
-    # create report post
 
+class CommentViewSet(DestroyModelMixin, RetrieveUpdateAPIView, BaseViewAPI, EmotionViewBase, GenericViewSet):
+    queryset = Comment.objects.filter(active=True)
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated, ]
 
-class EmotionViewSet(ModelViewSet, EmotionViewBase):
-    queryset = EmotionPost.objects.all()
-    serializer_class = EmotionPostSerializer
-    lookup_field = 'post_id'
+    # def retrieve(self, request, *args, **kwargs):
+    #     post_id = kwargs.get("post_id", None)
+    #     serializer_statistical = self.get_serializer_statistical_emotion_post(post_id)
+    #     serializer_emotion_post = self.get_serializer_detail_emotions_post(post_id)
+    #     return Response(data={
+    #         'statistical': serializer_statistical.data,
+    #         'data': serializer_emotion_post.data
+    #     }, status=status.HTTP_200_OK)
 
-    def retrieve(self, request, *args, **kwargs):
-        post_id = kwargs.get("post_id", None)
-        serializer_statistical = self.get_serializer_statistical_emotion_post(post_id)
-        serializer_emotion_post = self.get_serializer_detail_emotions_post(post_id)
-        return Response(data={
-            'statistical': serializer_statistical.data,
-            'data': serializer_emotion_post.data
-        }, status=status.HTTP_200_OK)
+    def get_permissions(self):
+        if self.action in ["retrieve", ]:
+            return [permissions.AllowAny(), ]
+        return [permissions.IsAuthenticated(), ]
+
+    def get_serializer_class(self):
+        if self.action in ["update", 'partial_update']:
+            return CommentCreateSerializer
+        return self.serializer_class
+
+    def update(self, request, *args, **kwargs):
+        if self.is_instance_of_user(request, self.get_object()):
+            super().update(request, *args, **kwargs)
+            return Response(CommentSerializer(self.get_object(), context={"request": request}).data, status.HTTP_200_OK)
+        raise permissions.exceptions.PermissionDenied()
+
+    def destroy(self, request, *args, **kwargs):
+        if self.is_instance_of_user(request):
+            return self.delete_custom(request)
+        raise permissions.exceptions.PermissionDenied()
+
+    @action(methods=["PATCH"], detail=True, url_path="emotions")
+    def create_or_update_or_delete_emotion_comment(self, request, pk, **kwargs):
+        if request.query_params.get("action", '').__eq__('delete'):
+            ins = EmotionComment.objects.get(author_id=request.user.id, comment_id=self.get_object().id).delete()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        data = {
+            'author_id': request.user.id or None,
+            'comment_id': self.get_object().id or None,
+            'emotion_type_id': request.query_params.get("emotion_type", None),
+        }
+        try:
+            instance_emotion = self.create_or_update_emotion(data, EmotionComment)
+            return Response(data=EmotionCommentSerializer(instance_emotion, context={"request": request}).data,
+                            status=status.HTTP_200_OK)
+        except EmotionType.DoesNotExist:
+            raise rest_framework.exceptions.NotFound("Emotion type not exist")
+
+# todo làm api lấy lịch sử đấu giá cho bài viết của user đó chỉ => xong
+# phân biệt bài viết đấu giá và bài viết thường
+# làm api login fb,google...
+# làm api thanh toán => getorder, createoder,list oder, => momo,paypal
+# làm api thông báo get tất cả thoe user, bài viết đã được duyệt làm trong api accept_post,thay đổi trạng thái của thông báo
+#

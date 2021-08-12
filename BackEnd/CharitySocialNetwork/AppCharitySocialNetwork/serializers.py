@@ -1,3 +1,4 @@
+import rest_framework.exceptions
 from rest_framework.serializers import *
 from django.contrib.auth.models import Group, Permission
 from .models import *
@@ -56,10 +57,13 @@ class UserRegisterSerializer(ModelSerializer):
     class Meta(BaseMeta):
         model = User
         fields = None
-        exclude = ['is_superuser', 'is_staff', 'last_login', 'groups', 'user_permissions']
+        exclude = ['is_superuser', 'is_staff', 'last_login', 'groups', 'user_permissions', 'notifications']
         read_only_fields = ["date_joined", "is_active", 'id']
         extra_kwargs = {
-            'password': {'write_only': True},
+            'password': {
+                'write_only': True,
+                "validators": [PasswordValidator(language="VN"), ]
+            },
         }
 
     def create(self, validated_data):
@@ -108,6 +112,48 @@ class UserChangePasswordSerializer(ModelSerializer):
 
 # end User
 
+# Emotion
+
+class EmotionTypeSerializer(ModelSerializer):
+    class Meta(BaseMeta):
+        model = EmotionType
+        fields = ['id', 'name', 'image', 'description', ]
+
+
+class EmotionStatisticalSerializer(EmotionTypeSerializer):
+    amount = IntegerField(default=0)
+
+    class Meta(EmotionTypeSerializer.Meta):
+        fields = EmotionTypeSerializer.Meta.fields + ['amount', ]
+        extra_kwargs = {
+            'amount': {"read_only": True},
+        }
+
+
+class EmotionCommentSerializer(ModelSerializer):
+    author = UserViewModelSerializer()
+
+    class Meta(BaseMeta):
+        model = EmotionComment
+        extra_kwargs = {
+            'comment': {"write_only": True},
+            'active': {"write_only": True}
+        }
+
+
+class EmotionPostSerializer(ModelSerializer):
+    author = UserViewModelSerializer()
+
+    class Meta(BaseMeta):
+        model = EmotionPost
+        extra_kwargs = {
+            'post': {"write_only": True},
+            'active': {"write_only": True}
+        }
+
+
+# end Emotion
+
 # Post
 class CategoryPostSerializer(ModelSerializer):
     class Meta:
@@ -122,23 +168,33 @@ class HashtagsSerializer(ModelSerializer):
 
 
 class AuctionItemModelSerializer(ModelSerializer):
+    # YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z]
     class Meta(BaseMeta):
         model = AuctionItem
-        fields = ["id", "post", "price_start"]
+        fields = ["id", "post", "price_start", 'start_datetime', 'end_datetime']
         extra_kwargs = {
             "id": {"read_only": True}
         }
 
+    def validate(self, attrs):
+        if attrs["start_datetime"].__ge__(attrs["end_datetime"]):
+            raise rest_framework.exceptions.ValidationError({
+                "end_datetime": "Thời gian kết thúc phải lớn hơn thời gian bắt đầu"
+            })
+        return attrs
+
 
 class AuctionItemSerializer(ModelSerializer):
-    class Meta(BaseMeta):
+    class Meta:
         model = AuctionItem
+        fields = ["id", "price_start", 'price_received', 'receiver', 'start_datetime', 'end_datetime']
 
 
 class PostSerializer(ModelSerializer):
     user = UserViewModelSerializer()
     category = CategoryPostSerializer()
     hashtag = HashtagsSerializer(many=True)
+    info_auction = AuctionItemSerializer(many=True)
 
     class Meta(BaseMeta):
         model = NewsPost
@@ -151,26 +207,63 @@ class PostSerializer(ModelSerializer):
         }
 
 
+class HistoryAuctionSerializer(ModelSerializer):
+    user = UserViewModelSerializer()
+
+    class Meta:
+        model = HistoryAuction
+        fields = ["id", "price", "user", 'description']
+
+
+class HistoryAuctionCreateSerializer(ModelSerializer):
+    class Meta:
+        model = HistoryAuction
+        fields = ["id", "price", "user", 'description', 'post']
+
+
 class PostListSerializer(PostSerializer):
     class Meta(PostSerializer.Meta):
         model = NewsPost
         exclude = ["comments", "active", "is_show"] + PostSerializer.Meta.exclude
 
 
+class PostDetailSerializer(PostSerializer):
+    historyauction = HistoryAuctionSerializer(many=True)
+
+    class Meta(PostSerializer.Meta):
+        extra_kwargs = {**PostSerializer.Meta.extra_kwargs,
+                        "history_auction": {"read_only": True}
+                        }
+
+
 class PostCreateSerializer(ModelSerializer):
     price_start = DecimalField(required=False, max_digits=50, decimal_places=2)
+    # YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z]
+    start_datetime = DateTimeField(required=False, )
+    end_datetime = DateTimeField(required=False)
 
     class Meta:
         model = NewsPost
-        fields = ["id", "category", "hashtag", "description", "content", "title", 'price_start', "user", 'image']
+        fields = ["id", "category", "hashtag", "description", "content", "title", 'price_start', "user", 'image',
+                  'start_datetime', 'end_datetime']
         read_only_fields = ["user", ]
         extra_kwargs = {
             'id': {'read_only': True},
         }
 
+    def validate(self, attrs):
+        # print(attrs)
+        if attrs.get("category", None) is None:
+            raise rest_framework.exceptions.ValidationError({"Category": "fields not empty"})
+        return attrs
+
     def create(self, validated_data, **kwargs):
 
-        data_auction = {"price_start": validated_data.pop("price_start", None)}
+        data_auction = {
+            "price_start": validated_data.pop("price_start", None),
+            'start_datetime': validated_data.pop("start_datetime", None),
+            'end_datetime': validated_data.pop("end_datetime", None)
+        }
         # print(data_auction)
         if data_auction.get("price_start", None):
             instance_news_post = super().create(validated_data)
@@ -194,6 +287,9 @@ class PostCreateSerializer(ModelSerializer):
             ai.save()
         return super().update(instance, validated_data)
 
+    def to_representation(self, instance):
+        pass
+
 
 class PostChangeFieldIsShow(ModelSerializer):
     class Meta:
@@ -207,6 +303,7 @@ class PostChangeFieldIsShow(ModelSerializer):
 
 class CommentChildSerializer(ModelSerializer):
     user = UserViewModelSerializer()
+    emotions = EmotionCommentSerializer(many=True)
 
     class Meta:
         model = Comment
@@ -216,6 +313,7 @@ class CommentChildSerializer(ModelSerializer):
 class CommentSerializer(ModelSerializer):
     user = UserViewModelSerializer()
     comment_child = CommentChildSerializer(many=True)
+    emotions = EmotionCommentSerializer(many=True)
 
     class Meta:
         model = Comment
@@ -240,44 +338,6 @@ class CommentCreateSerializer(ModelSerializer):
 
 # end Comment
 
-# Emotion
-
-
-class EmotionTypeSerializer(ModelSerializer):
-    amount = IntegerField(default=0)
-
-    class Meta(BaseMeta):
-        model = EmotionType
-        fields = ['id', 'name', 'image', 'description', 'amount']
-        extra_kwargs = {
-            'amount': {"read_only": True},
-            'active': {"write_only": True}
-        }
-
-
-class EmotionCommentSerializer(ModelSerializer):
-    class Meta(BaseMeta):
-        model = EmotionComment
-
-
-class EmotionPostSerializer(ModelSerializer):
-    author = UserViewModelSerializer()
-
-    class Meta(BaseMeta):
-        model = EmotionPost
-        extra_kwargs = {
-            'post': {"write_only": True},
-            'active': {"write_only": True}
-        }
-
-
-# end Emotion
-
-class HistoryAuctionSerializer(ModelSerializer):
-    class Meta(BaseMeta):
-        model = HistoryAuction
-
-
 class OptionReportSerializer(ModelSerializer):
     class Meta(BaseMeta):
         model = OptionReport
@@ -293,6 +353,23 @@ class ReportPostCreateSerializer(ModelSerializer):
     class Meta:
         model = ReportPost
         exclude = ["post", "user", 'active']
+        read_only_fields = ['id', ]
+
+    def validate(self, data):
+        if data.get("reason", None) is None:
+            raise ValidationError({"reason": "field cannot be empty"})
+        return data
+
+
+class ReportUserSerializer(ModelSerializer):
+    class Meta(BaseMeta):
+        model = ReportUser
+
+
+class ReportUserCreateSerializer(ModelSerializer):
+    class Meta:
+        model = ReportUser
+        exclude = ["user", 'active']
         read_only_fields = ['id', ]
 
     def validate(self, data):

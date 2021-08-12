@@ -3,7 +3,7 @@ from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, Permission
 from django.template.response import TemplateResponse
 from django.urls import path
-from oauth2_provider.models import AccessToken
+from oauth2_provider.models import Application
 from rest_framework.authtoken.models import Token
 
 from .models import *

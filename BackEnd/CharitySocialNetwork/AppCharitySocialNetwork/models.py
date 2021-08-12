@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -33,7 +35,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='images/%y/%M/%d/', null=True)
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10, choices=typeGender, default=0)
-  
+    notifications = models.ManyToManyField('Notification', blank=True)
 
 
 class NewsCategory(ModelBase):
@@ -52,13 +54,14 @@ class NewsPost(ModelBase):
     is_show = models.BooleanField(default=False, help_text="Chỉ người duyệt bài mới cho phép thay đổi")
     comments = models.ManyToManyField('Comment', blank=True, related_query_name="comments")
     reports = models.ManyToManyField('ReportPost', blank=True, related_query_name="reports")
+    emotions = models.ManyToManyField("EmotionPost", blank=True, related_query_name="emotions")
 
     def __str__(self):
         return self.title
 
     class Meta:
         unique_together = ("title",)
-    # ordering = ['-created_date']
+        # ordering = ['-created_date']
 
 
 class Comment(ModelBase):
@@ -68,7 +71,7 @@ class Comment(ModelBase):
     content = models.TextField()
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     comment_child = models.ManyToManyField('Comment', blank=True)
-
+    emotions = models.ManyToManyField("EmotionComment", blank=True, related_query_name="emotions")
 
     def __str__(self):
         return self.content
@@ -84,7 +87,7 @@ class OptionReport(models.Model):
 class ReportPost(ModelBase):
     name = None
     description = None
-    content = models.TextField(null=True,blank=True)
+    content = models.TextField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user')
     post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, related_name='post')
     reason = models.ForeignKey(OptionReport, on_delete=models.SET_NULL, null=True)
@@ -111,9 +114,12 @@ class AuctionItem(ModelBase):
     description = None
     price_start = models.DecimalField(max_digits=50, decimal_places=2, default=0)
     price_received = models.DecimalField(max_digits=50, decimal_places=2, default=0, blank=True)
-    receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='auction_receiver',
+    receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
                                  blank=True)
-    post = models.ForeignKey(NewsPost, on_delete=models.SET_NULL, null=True)
+    post = models.ForeignKey(NewsPost, on_delete=models.SET_NULL, null=True,related_name="info_auction")
+
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
 
     class Meta:
         unique_together = ('post',)
@@ -191,10 +197,21 @@ class HistoryAuction(ModelBase):
     image = None
     price = models.DecimalField(max_digits=50, decimal_places=2)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, default=None)
+    post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, default=None,related_name="historyauction")
 
     def __str__(self):
-        return self.user.get_full_name() + " : " + self.post.title + " -> " + str(self.price)
+        return str(self.user) + " : " + self.post.title + " -> " + str(self.price)
 
     class Meta:
         ordering = ["post", "price", "user"]
+
+
+class Notification(models.Model):
+    title = models.CharField(max_length=255)
+    message = models.CharField(max_length=255)
+    new = models.BooleanField(default=True)
+    active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_date",]

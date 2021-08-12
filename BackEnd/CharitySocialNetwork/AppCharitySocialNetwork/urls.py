@@ -6,8 +6,7 @@ router = routers.DefaultRouter()
 router.register('accounts', views.UserView)
 router.register('newspost', views.PostViewSet)
 router.register('optionreport', views.ReportViewSet)
-router.register('emotion',views.EmotionViewSet)
-
+router.register('comment', views.CommentViewSet)
 
 # from .admin import customAdminSite
 urlpatterns = [
