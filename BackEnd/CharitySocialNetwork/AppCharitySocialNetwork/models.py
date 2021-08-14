@@ -214,4 +214,4 @@ class Notification(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-created_date",]
+        ordering = ["-created_date","new"]

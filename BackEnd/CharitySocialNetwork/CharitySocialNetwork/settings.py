@@ -151,3 +151,29 @@ REST_FRAMEWORK = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 # CORS_ALLOWED_ORIGINS = ['http://dkmh.ou.edu.vn',]
+
+
+NOTIFICATION_MESSAGE = {
+    "add_post": {
+        "title": "Tạo bài viết thành công",
+        "message": "Bài sẽ được đội admin duyệt sớm bạn hãy chờ nhé"
+    },
+    'update_post': {
+        'title': "Update",
+        'message': "bạn vừa thay đổi nội dung bài viết chờ đội admin duyệt bài lại nhé"
+    },
+    'delete_post': {
+        "title": "Xóa bài viết",
+        "message": "Xóa bài viết thành công"
+    },
+    'comment_child_new': {
+        "title": "Bạn có bình luận mới",
+        "message": "abc"
+    },
+    'comment_post': {
+        "title": "Có bình luận mới",
+        "message": "abc"
+    },
+
+
+}

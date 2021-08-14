@@ -208,11 +208,14 @@ class PostSerializer(ModelSerializer):
 
 
 class HistoryAuctionSerializer(ModelSerializer):
-    user = UserViewModelSerializer()
+    user = UserViewModelSerializer(required=False)
 
-    class Meta:
+    class Meta(BaseMeta):
         model = HistoryAuction
         fields = ["id", "price", "user", 'description']
+        extra_kwargs = {
+            "user": {"read_only": True}
+        }
 
 
 class HistoryAuctionCreateSerializer(ModelSerializer):
@@ -376,3 +379,8 @@ class ReportUserCreateSerializer(ModelSerializer):
         if data.get("reason", None) is None:
             raise ValidationError({"reason": "field cannot be empty"})
         return data
+
+
+class NotificationSerializer(ModelSerializer):
+    class Meta(BaseMeta):
+        model = Notification

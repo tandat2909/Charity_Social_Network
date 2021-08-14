@@ -1,8 +1,7 @@
-import datetime
-
-import django.utils.datetime_safe
+import decimal
 import pytz
 import rest_framework.exceptions
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout, decorators
 from django.db.models import Q, Count
 from django.shortcuts import render, redirect
@@ -69,12 +68,50 @@ class BaseViewAPI:
 
     def is_instance_of_user(self, request, instance=None):
         instance = instance or self.get_object()
-        return bool(request.user.is_authenticated and request.user.id == instance.user.id)
+        try:
+            return bool(request.user.is_authenticated and request.user.id == instance.user.id)
+        except:
+            return False
+
+    def add_notification(self, title, message, user=None, request=None, *args, **kwargs):
+        """
+            user là instance User được thêm thông báo mặc dịnh sẽ lấy trong request.user
+            request: mặc định sẽ lấy self.request của lớp ViewSet
+            title: tiêu đề thông báo
+            message: nội dung thông báo
+            Nếu user và request không lấy được đồng nghĩa với việc không thêm được thông báo và hàm trả về False
+            Nếu add thành công sẽ trả về True
+
+        :param title:
+        :param message:
+        :param user:
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        try:
+            user = user or request.user or self.request.user
+            n = Notification(title=title, message=message)
+            n.save()
+            user.notifications.add(n)
+            return True
+        except Exception as ex:
+            print(ex)
+            return False
 
     def delete_custom(self, request=None, instance=None, *args, **kwargs):
         instance = instance or self.get_object()
         instance.active = False
         instance.save()
+        # add thong báo
+        if isinstance(instance, NewsPost):
+            self.add_notification(title="Xóa bài viết", message='Bạn vừa xóa bài viết "' + instance.title + '"')
+
+        if isinstance(instance, Comment):
+            self.add_notification(title="Xóa commment bài viết",
+                                  message='Bạn vừa xóa comment "' + instance.content + '"')
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_parsers(self):
@@ -91,7 +128,7 @@ class BaseViewAPI:
             return super().get_parsers()
 
     def is_between_time(self, start, end, intime=datetime.datetime.now(pytz.utc)):
-        print(start, end, intime)
+        # print(start, end, intime)
 
         if start <= intime <= end:
             return True
@@ -130,6 +167,8 @@ class UserView(BaseViewAPI, GenericViewSet, CreateModelMixin, UpdateModelMixin):
             return UserRegisterSerializer
         if self.action in ['create_report', ]:
             return ReportUserCreateSerializer
+        if self.action in ["notification", ]:
+            return NotificationSerializer
         return UserSerializer
 
     # def create(self, request, *args, **kwargs):
@@ -143,9 +182,9 @@ class UserView(BaseViewAPI, GenericViewSet, CreateModelMixin, UpdateModelMixin):
     #     return super().create(request, *args, **kwargs)
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'change_password']:
+        if self.action in ['update', 'partial_update', 'change_password', 'notificationhidden']:
             return [PermissionUserChange(), ]
-        if self.action == "create":
+        if self.action in ["create", "logout"]:
             return [permissions.AllowAny(), ]
 
         return [PermissionUserViewInfo(), ]
@@ -177,7 +216,9 @@ class UserView(BaseViewAPI, GenericViewSet, CreateModelMixin, UpdateModelMixin):
         if request.user.is_superuser or request.user.is_staff:
             pk = kwargs.get("id")
             return Response(UserSerializer(self.queryset.get(pk=pk)).data, status.HTTP_200_OK)
-        return Response(UserSerializer(request.user).data, status.HTTP_200_OK)
+        return Response(UserSerializer(request.user,context={
+            'request':request
+        }).data, status.HTTP_200_OK)
 
     @action(methods=["POST"], detail=False, url_path="report")
     def create_report(self, request, **kwargs):
@@ -188,6 +229,25 @@ class UserView(BaseViewAPI, GenericViewSet, CreateModelMixin, UpdateModelMixin):
         instance = serializer.save(**{"user": request.user})
         return Response(ReportUserSerializer(instance, context={"request": request}).data,
                         status=status.HTTP_200_OK)
+
+    @action(methods=["GET"], detail=False)
+    def notification(self, request, **kwargs):
+        queryset = request.user.notifications.filter(active=True)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=["DELETE"], detail=False, url_path="notificationhidden")
+    def notificationhidden(self, request, pk, **kwargs):
+        try:
+            print(kwargs)
+            instance_notification = request.user.notifications.get(pk=kwargs.get("notification_id", None))
+            return super().delete_custom(request, instance_notification)
+        except Notification.DoesNotExist:
+            return Response({'Error': "Mã thông báo không hợp lệ"})
 
 
 class EmotionViewBase:
@@ -322,12 +382,14 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         if self.is_instance_of_user(request, self.get_object()):
             return Response(PostDetailSerializer(self.get_object(), context={"request": request}).data,
                             status=status.HTTP_200_OK)
+
         data = self.get_serializer(self.get_object()).data.copy()
         data["historyauction"] = []
         try:
             if request.user.is_authenticated and AuctionItem.objects.filter(post=self.get_object().id).exist():
                 instance_history_auction_of_user_current = HistoryAuction.objects.get(user=request.user.id,
-                                                                                      post=self.get_object().id)
+                                                                                      post=self.get_object().id,
+                                                                                      active=True)
                 his_auc_dic = OrderedDict()
                 his_auc_dic["id"] = instance_history_auction_of_user_current.id
                 his_auc_dic["price"] = instance_history_auction_of_user_current.price
@@ -410,6 +472,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(**{"user": request.user})
+        self.add_notification(**settings.NOTIFICATION_MESSAGE.get("create_post"))
         return Response(PostSerializer(instance, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
@@ -418,6 +481,10 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             return super().update(request, *args, **kwargs)
         raise PermissionDenied()
 
+    def perform_update(self, serializer):
+        serializer.save(**{"is_show": False})
+        self.add_notification(**settings.NOTIFICATION_MESSAGE.get("update_post"))
+
     @action(methods=["PATCH"], detail=True, url_path="is-post-allowed")
     def is_post_allowed(self, request, pk, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -425,6 +492,8 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         instance = self.get_object()
         instance.is_show = serializer.data["is_show"]
         instance.save()
+        if instance.is_show:
+            self.add_notification(title="Bài viết đã được xác nhận")
         return Response(status=status.HTTP_200_OK)
 
     @action(methods=["GET"], detail=False, url_path="user")
@@ -478,7 +547,6 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     @action(methods=["POST"], detail=True, url_path="comment")
     def create_comment(self, request, pk, **kwargs):
         """
-
             tạo comment bài viết
             <b>Param</b>
                 có 2 tham số:
@@ -498,9 +566,20 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                 instance_comment_parent = self.get_object().comments.get(id=comment_parent)
                 instance_comment_parent.comment_child.add(instance_comment)
                 instance_comment_parent.save()
+                self.add_notification(title="Bình luận mới",
+                                      user=instance_comment_parent.user,
+                                      message=request.user.get_full_name() +
+                                              " đã phản hồi bình luận của bạn về bài viết của " +
+                                              self.get_object().user.get_full_name())
+
             else:
                 self.get_object().comments.add(instance_comment)
                 self.get_object().save()
+            # kiểm tra bài viết hiện tại có phải của user đang bình luận nếu phải sẽ không add thông báo
+            if not self.is_instance_of_user(request, self.get_object()):
+                self.add_notification(title="Bình luận mới",
+                                      message=request.user.get_full_name() + " đã bình luận bài viết của bạn",
+                                      user=self.get_object().user)
             return Response(data=CommentSerializer(instance_comment_parent).data, status=status.HTTP_200_OK)
         except Comment.DoesNotExist:
             raise rest_framework.exceptions.NotFound({"detail": "comment_parent not exist"})
@@ -548,6 +627,11 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         }
         try:
             instance_emotion = self.create_or_update_emotion(data, EmotionPost)
+            self.add_notification(title="",
+                                  message=(self.request.user.get_full_name() or self.request.user.username) +
+                                          " " + instance_emotion.emotion_type.name + ' bài viết " ' + self.get_object().title + ' " của bạn"',
+                                  user=self.get_object().user
+                                  )
             return Response(data=EmotionPostSerializer(instance_emotion, context={"request": request}).data,
                             status=status.HTTP_200_OK)
         except EmotionType.DoesNotExist:
@@ -592,6 +676,18 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             instance_auction_item.price_received = instance_history_auction.price
 
             instance_history_auction.save()
+
+            self.add_notification(title="Thông báo đấu giá",
+                                  message="Chúc mừng bạn là người chiến thắng trong buổi đấu giá" + self.get_object().title,
+                                  user=instance_history_auction.user
+                                  )
+            self.add_notification(title="Thông báo thánh toán đấu giá",
+                                  message=str(instance_auction_item.price_received) +
+                                          'VNĐ là số tiền bạn phải thanh toán cho ban tổ chức từ thiện của bài viết "' +
+                                          self.get_object().title,
+                                  user=instance_history_auction.user
+                                  )
+
             return Response(AuctionItemSerializer(instance_auction_item).data, status=status.HTTP_200_OK)
         except AuctionItem.DoesNotExist:
             raise rest_framework.exceptions.NotFound("Bài viết không phải loại bài viết đấu giá")
@@ -620,6 +716,11 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             serializer_history = HistoryAuctionCreateSerializer(data=history_data)
             serializer_history.is_valid(raise_exception=True)
             serializer_history.save()
+            self.add_notification(title="Thông báo có giá mới", user=self.get_object().user,
+                                  message='{username} đề nghị giá {price} VNĐ cho bài viết {post_title}'.format(
+                                      username=request.user.get_full_name(),
+                                      price=str(offer),
+                                      post_title=self.get_object().title))
             return Response(serializer_history.data, status=status.HTTP_200_OK)
         except AuctionItem.DoesNotExist:
             raise rest_framework.exceptions.NotFound("Bài viết không phải loại bài viết đấu giá")
@@ -665,7 +766,7 @@ class CommentViewSet(DestroyModelMixin, RetrieveUpdateAPIView, BaseViewAPI, Emot
 
     def destroy(self, request, *args, **kwargs):
         if self.is_instance_of_user(request):
-            return self.delete_custom(request)
+            return self.delete_custom(request, request)
         raise permissions.exceptions.PermissionDenied()
 
     @action(methods=["PATCH"], detail=True, url_path="emotions")
@@ -686,9 +787,32 @@ class CommentViewSet(DestroyModelMixin, RetrieveUpdateAPIView, BaseViewAPI, Emot
         except EmotionType.DoesNotExist:
             raise rest_framework.exceptions.NotFound("Emotion type not exist")
 
+
+class HistoryAuctionViewSet(UpdateModelMixin, DestroyModelMixin, BaseViewAPI, GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated, ]
+    queryset = HistoryAuction.objects.filter(active=True)
+    serializer_class = HistoryAuctionSerializer
+
+    def update(self, request, *args, **kwargs):
+        if super().is_instance_of_user(request, self.get_object()):
+            if request.data.get("user", None):
+                raise rest_framework.exceptions.ValidationError(
+                    {"error": "Không thể thay đổi user chỉ được thay đổi mệnh giá tiền và mô tả"})
+            price_start = self.get_object().post.info_auction.first().price_start
+            if price_start.__gt__(decimal.Decimal(request.data.get("price"))):
+                raise rest_framework.exceptions.ValidationError({"price": "Giá không thể thấp hơn giá ban đầu"})
+            return super().update(request, *args, **kwargs)
+        raise rest_framework.exceptions.PermissionDenied()
+
+    def destroy(self, request, *args, **kwargs):
+        if super().is_instance_of_user(request, self.get_object()):
+            return super().destroy(request, *args, **kwargs)
+        raise rest_framework.exceptions.PermissionDenied()
+
 # todo làm api lấy lịch sử đấu giá cho bài viết của user đó chỉ => xong
-# phân biệt bài viết đấu giá và bài viết thường
+# todo phân biệt bài viết đấu giá và bài viết thường => xong
 # làm api login fb,google...
 # làm api thanh toán => getorder, createoder,list oder, => momo,paypal
-# làm api thông báo get tất cả thoe user, bài viết đã được duyệt làm trong api accept_post,thay đổi trạng thái của thông báo
-#
+# todo làm api thông báo get tất cả thoe user, bài viết đã được duyệt làm trong api accept_post,thay đổi trạng thái của thông báo => test api => done
+# todo làm api xóa cập nhật lịch sử đấu giá của người đấu giá=> done
+# test lại api thông báo
