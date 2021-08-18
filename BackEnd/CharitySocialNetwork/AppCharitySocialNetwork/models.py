@@ -2,6 +2,7 @@ import datetime
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from cloudinary.models import CloudinaryField
 
 
 # Create your models here.
@@ -9,7 +10,7 @@ from django.contrib.auth.models import AbstractUser
 
 class ModelBase(models.Model):
     name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to="images/", null=True, blank=True)
+    image = CloudinaryField('image', null=True, blank=True)
     description = models.CharField(max_length=255, blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
@@ -29,10 +30,10 @@ class User(AbstractUser):
     class Meta:
         ordering = ['id']
 
-    nick_name = models.CharField(max_length=255, null=True)
-    phone_number = models.CharField(max_length=10, null=True)
+    nick_name = models.CharField(max_length=255, null=True, )
+    phone_number = models.CharField(max_length=20, null=True, )
     address = models.CharField(max_length=255, null=True)
-    avatar = models.ImageField(upload_to='images/%y/%M/%d/', null=True)
+    avatar = CloudinaryField('avatar', null=True)
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10, choices=typeGender, default=0)
     notifications = models.ManyToManyField('Notification', blank=True)
@@ -61,6 +62,7 @@ class NewsPost(ModelBase):
 
     class Meta:
         unique_together = ("title",)
+
         # ordering = ['-created_date']
 
 
@@ -116,7 +118,7 @@ class AuctionItem(ModelBase):
     price_received = models.DecimalField(max_digits=50, decimal_places=2, default=0, blank=True)
     receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
                                  blank=True)
-    post = models.ForeignKey(NewsPost, on_delete=models.SET_NULL, null=True,related_name="info_auction")
+    post = models.ForeignKey(NewsPost, on_delete=models.SET_NULL, null=True, related_name="info_auction")
 
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
@@ -197,7 +199,7 @@ class HistoryAuction(ModelBase):
     image = None
     price = models.DecimalField(max_digits=50, decimal_places=2)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, default=None,related_name="historyauction")
+    post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, default=None, related_name="historyauction")
 
     def __str__(self):
         return str(self.user) + " : " + self.post.title + " -> " + str(self.price)
@@ -214,4 +216,4 @@ class Notification(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-created_date","new"]
+        ordering = ["-created_date", "new"]

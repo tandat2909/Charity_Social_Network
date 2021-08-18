@@ -1,4 +1,7 @@
 import rest_framework.exceptions
+from cloudinary import CloudinaryResource, models as cloudmodels
+from cloudinary.forms import CloudinaryJsFileField, CloudinaryUnsignedJsFileField
+from rest_framework import serializers
 from rest_framework.serializers import *
 from django.contrib.auth.models import Group, Permission
 from .models import *
@@ -39,37 +42,62 @@ class GroupsSerializer(ModelSerializer):
 
 
 class UserViewModelSerializer(ModelSerializer):
+    avatar = ImageField()
+
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'avatar']
         read_only_fields = ['id', 'username', 'first_name', 'last_name', 'avatar']
 
+    # def get_avatar(self, obj):
+    #     return obj.avatar.url or ""
+
 
 class UserSerializer(ModelSerializer):
+    avatar = ImageField(required=True, error_messages={'required': 'Avatar không được để trống'})
+
     class Meta(BaseMeta):
         model = User
         fields = None
-        exclude = ['password', 'is_superuser', 'is_staff', 'last_login', 'groups', 'user_permissions']
-        read_only_fields = ["date_joined", "is_active", 'id']
+        exclude = ['password', 'is_superuser', 'is_active', 'is_staff', 'last_login', 'groups', 'user_permissions']
+        read_only_fields = ["date_joined", 'id']
+
+    #
+    # def get_avatar(self, obj):
+    #     return obj.avatar.url
+    # def validate(self, attrs):
+    #     print(type(attrs.get('avatar', None)))
+    #     return attrs
 
 
 class UserRegisterSerializer(ModelSerializer):
+    avatar = ImageField(required=True, error_messages={'required': 'Avatar không được để trống'})
+
     class Meta(BaseMeta):
         model = User
         fields = None
-        exclude = ['is_superuser', 'is_staff', 'last_login', 'groups', 'user_permissions', 'notifications']
-        read_only_fields = ["date_joined", "is_active", 'id']
+        exclude = ['is_superuser', 'is_staff', 'last_login', 'is_active', 'groups', 'user_permissions', 'notifications']
+        read_only_fields = ["date_joined", 'id']
         extra_kwargs = {
             'password': {
                 'write_only': True,
-                "validators": [PasswordValidator(language="VN"), ]
+                "validators": [PasswordValidator(language="VN"), ],
+                'style': {'input_type': 'password'}
             },
         }
 
+    # def validate(self, attrs):
+    #     if not attrs.get("avatar", None):
+    #         raise rest_framework.exceptions.ValidationError({'avatar': "Yêu cầu cung cấp hình ảnh đại diện"})
+    #     return attrs
+
     def create(self, validated_data):
+        avatar = validated_data.get("avatar", None)
+        print(type(avatar))
         u = User(**validated_data)
         u.set_password(u.password)
         u.save()
+        print(u.avatar.url)
         return self.add_group_permission(user=u)
 
     def add_group_permission(self, user):
@@ -115,6 +143,8 @@ class UserChangePasswordSerializer(ModelSerializer):
 # Emotion
 
 class EmotionTypeSerializer(ModelSerializer):
+    image = ImageField()
+
     class Meta(BaseMeta):
         model = EmotionType
         fields = ['id', 'name', 'image', 'description', ]
@@ -156,9 +186,11 @@ class EmotionPostSerializer(ModelSerializer):
 
 # Post
 class CategoryPostSerializer(ModelSerializer):
+    image = ImageField()
+
     class Meta:
         model = NewsCategory
-        fields = ["id", "name"]
+        fields = ["id", "name", 'image', 'description']
 
 
 class HashtagsSerializer(ModelSerializer):
@@ -195,6 +227,7 @@ class PostSerializer(ModelSerializer):
     category = CategoryPostSerializer()
     hashtag = HashtagsSerializer(many=True)
     info_auction = AuctionItemSerializer(many=True)
+    image = ImageField()
 
     class Meta(BaseMeta):
         model = NewsPost
@@ -240,10 +273,12 @@ class PostDetailSerializer(PostSerializer):
 
 
 class PostCreateSerializer(ModelSerializer):
+    hashtag = ListSerializer(child=CharField(required=False, max_length=100), required=False)
     price_start = DecimalField(required=False, max_digits=50, decimal_places=2)
     # YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z]
     start_datetime = DateTimeField(required=False, )
     end_datetime = DateTimeField(required=False)
+
 
     class Meta:
         model = NewsPost
@@ -260,6 +295,12 @@ class PostCreateSerializer(ModelSerializer):
             raise rest_framework.exceptions.ValidationError({"Category": "fields not empty"})
         return attrs
 
+    def add_hashtag(self, post, hashtags, **kwargs):
+        # print(hashtags,'sdfsdf',type(hashtags))
+        for item in hashtags:
+            instance_hashtag, create = Hashtag.objects.get_or_create(name=item)
+            post.hashtag.add(instance_hashtag)
+
     def create(self, validated_data, **kwargs):
 
         data_auction = {
@@ -267,9 +308,15 @@ class PostCreateSerializer(ModelSerializer):
             'start_datetime': validated_data.pop("start_datetime", None),
             'end_datetime': validated_data.pop("end_datetime", None)
         }
+
         # print(data_auction)
-        if data_auction.get("price_start", None):
-            instance_news_post = super().create(validated_data)
+        hashtag = validated_data.pop("hashtag", None)
+        instance_news_post = super().create(validated_data)
+
+        self.add_hashtag(instance_news_post, hashtag)
+
+        # kiểm tra bài viết có phải là danh mục đấu giá không
+        if instance_news_post.category.id == 1:
             data_auction["post"] = instance_news_post.id
             try:
                 serializer_auction = AuctionItemModelSerializer(data=data_auction)
@@ -278,20 +325,17 @@ class PostCreateSerializer(ModelSerializer):
             except Exception as ex:
                 instance_news_post.delete()
                 raise ex
-            return instance_news_post
-
-        return super().create(validated_data)
+        return instance_news_post
 
     def update(self, instance, validated_data):
         price_start = validated_data.pop("price_start", None)
+        hashtag = validated_data.pop("hashtag", None)
+        self.add_hashtag(instance, hashtag)
         if price_start is not None:
             ai = AuctionItem.objects.get(post_id=instance.id)
             ai.price_start = price_start
             ai.save()
         return super().update(instance, validated_data)
-
-    def to_representation(self, instance):
-        pass
 
 
 class PostChangeFieldIsShow(ModelSerializer):

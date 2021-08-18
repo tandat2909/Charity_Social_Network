@@ -21,7 +21,7 @@ from rest_framework import permissions
 from oauth2_provider import views,urls
 schema_view = get_schema_view(
     openapi.Info(
-        title="Course API",
+        title="Charity Social Network API",
         default_version='v1',
         description="APIs for CharitySocialNetwork",
         contact=openapi.Contact(email="vutandat29092000@gmail.com"),

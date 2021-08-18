@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'oauth2_provider',
     'corsheaders',
     'django_filters',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -125,7 +126,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-
 MEDIA_ROOT = '%s/AppCharitySocialNetwork/static/' % BASE_DIR
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
@@ -175,5 +175,24 @@ NOTIFICATION_MESSAGE = {
         "message": "abc"
     },
 
+}
 
+DROPBOX_SETTING = {
+    "app_key": configLocal.dropbox.get("app_key"),
+    "app_secret": configLocal.dropbox.get("app_secret"),
+    "access_token": configLocal.dropbox.get("access_token")
+}
+
+CLOUDINARY = {
+    'cloud_name': 'charitycdn',
+    'api_key': '717287562921176',
+    'api_secret': configLocal.cloudinary.get('api_secret'),
+    'secure': True
+}
+
+CLOUDINARY_URL = 'cloudinary://717287562921176:CPNboHJ8GqH0uT5f_uLNgHpuMIk@charitycdn'
+
+FACEBOOK = {
+    'id_app': '502879657806363',
+    'secret_key': 'a8e308eff516df7638fd7444862d479b',
 }

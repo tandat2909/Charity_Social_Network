@@ -1,0 +1,162 @@
+import rest_framework
+from django.contrib.auth import logout
+from django.db.models import Q
+from rest_framework import permissions, status
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.mixins import CreateModelMixin, UpdateModelMixin
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
+
+from ..models import User, Notification
+from ..permission import PermissionUserChange, PermissionUserViewInfo
+from ..serializers import UserChangePasswordSerializer, \
+    ReportUserCreateSerializer, UserRegisterSerializer, NotificationSerializer, UserSerializer, ReportUserSerializer
+from ..view.baseview import BaseViewAPI
+
+
+class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
+    '''
+        Tất cả action API dành cho User
+        url: /api/accounts/
+
+        todo: chưa validate các trường phonenumber,avatar,birthday,gender
+
+    '''
+
+    queryset = User.objects.exclude(Q(is_superuser=True) | Q(is_active=False))
+
+    list_action_upload_file = ["create", ]
+
+    def get_serializer_class(self):
+        '''
+            action change_password: dùng UserChangePasswordSerializer class
+            action register(create): dùng UserRegisterSerializer class
+            action get, update info: dùng UserSerializer class
+        :return: serializer class
+        '''
+        if self.action == "change_password":
+            return UserChangePasswordSerializer
+        if self.action == 'create':
+            return UserRegisterSerializer
+        if self.action in ['create_report', ]:
+            return ReportUserCreateSerializer
+        if self.action in ["notification", ]:
+            return NotificationSerializer
+        return UserSerializer
+
+    # def create(self, request, *args, **kwargs):
+    #     print(request.__dict__)
+    #     file = request.FILES.get("avatar")
+    #     file_name = str(file)
+    #     with default_storage.open('images/' + file_name, 'wb+') as destination:
+    #         for chunk in file.chunks():
+    #             destination.write(chunk)
+    #         print(destination.path)
+    #     return super().create(request, *args, **kwargs)
+
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'change_password', ]:
+            return [PermissionUserChange(), ]
+        if self.action in ["create", "logout", 'notification_hidden']:
+            return [permissions.AllowAny(), ]
+
+        return [PermissionUserViewInfo(), ]
+
+    def update(self, request, *args, **kwargs):
+        if self.is_view_user_login(request, kwargs.get("pk")):
+            return super().update(request, *args, **kwargs)
+        raise PermissionDenied()
+
+    @action(methods=["PATCH"], detail=False, url_path='change_password', name="change_password")
+    def change_password(self, request, **kwargs):
+
+        serializer = UserChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(request.user, request.data)
+        logout(request)
+        request.auth.revoke()
+        return Response(data={'success': 'Change password success'}, status=status.HTTP_200_OK)
+
+    @action(methods=["GET"], detail=False, url_path="logout", name="logout")
+    def logout(self, request, *args, **kwargs):
+        logout(request)
+        if request.auth:
+            request.auth.revoke()
+        return Response(status=status.HTTP_200_OK)
+
+    # @method_decorator(cache_page(60 * 60 * 2))
+    # @method_decorator(vary_on_headers("Authorization", ))
+    @action(methods=["GET"], detail=False, url_path="profile", name="profile")
+    def profile(self, request, *args, **kwargs):
+        if request.user.is_superuser or request.user.is_staff:
+            pk = kwargs.get("id")
+            return Response(UserSerializer(self.queryset.get(pk=pk)).data, status.HTTP_200_OK)
+        return Response(UserSerializer(request.user, context={
+            'request': request
+        }).data, status.HTTP_200_OK)
+
+    @action(methods=["POST"], detail=False, url_path="report")
+    def create_report(self, request, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get("user_report").id == request.user.id:
+            raise rest_framework.exceptions.ValidationError({"Error": "Bạn không thể report chính bạn"})
+        instance = serializer.save(**{"user": request.user})
+        return Response(ReportUserSerializer(instance, context={"request": request}).data,
+                        status=status.HTTP_200_OK)
+
+    @action(methods=["GET", 'DELETE', 'PATCH'], detail=False)
+    def notification(self, request, **kwargs):
+        """
+            Methods:
+                + Patch: dùng để set trạng thái đã đọc hay chưa
+                + Delete: dùng để xóa thông báo
+                + Get: lấy tất cả thông báo
+            Param:
+                + id: action patch,delete cần gắn tham số này trên url để định danh một instance thông báo
+
+        """
+        if request.method == "GET":
+            queryset = request.user.notifications.filter(active=True)
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        try:
+            instance = request.user.notifications.get(pk=request.query_params.get('id'), active=True)
+            if request.method == 'DELETE':
+                return self.delete_custom(request, instance)
+            if request.method == "PATCH":
+                instance.new = False
+                instance.save()
+                return Response(status=status.HTTP_200_OK)
+        except Notification.DoesNotExist:
+            raise rest_framework.exceptions.NotFound({"notification": "Id notification not Exist"})
+        except ValueError:
+            raise rest_framework.exceptions.ValidationError(
+                {"error": "Yêu cầu có tham số id và tham số kiểu dữ liệu là Int"})
+        # if request.method == 'DELETE':
+        #     try:
+        #         instance = request.user.notifications.get(pk=request.query_params.get('id'),active=True)
+        #         return self.delete_custom(request, instance)
+        #     except Notification.DoesNotExist:
+        #         raise rest_framework.exceptions.NotFound({"notification": "Id notification not Exist"})
+        #     except ValueError:
+        #         raise rest_framework.exceptions.ValidationError(
+        #             {"error": "Yêu cầu có tham số id và tham số kiểu dữ liệu là Int"})
+        #
+        # if request.method == "PATCH":
+        #     try:
+        #         instance = request.user.notifications.get(pk=request.query_params.get('id'))
+        #         instance.new = False
+        #         instance.save()
+        #         return Response(status=status.HTTP_200_OK)
+        #     except Notification.DoesNotExist:
+        #         raise rest_framework.exceptions.NotFound({"notification": "Thông báo không tồn tại"})
+        #     except ValueError:
+        #         raise rest_framework.exceptions.ValidationError(
+        #             {"error": "Yêu cầu có tham số id và tham số kiểu dữ liệu là Int"})

@@ -8,6 +8,7 @@ router.register('newspost', views.PostViewSet)
 router.register('optionreport', views.ReportViewSet)
 router.register('comment', views.CommentViewSet)
 router.register('historyauction', views.HistoryAuctionViewSet)
+router.register('emotions',views.EmotionTypeViewSet)
 
 # from .admin import customAdminSite
 urlpatterns = [
