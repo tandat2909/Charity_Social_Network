@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 import rest_framework
 from django.conf import settings
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status
 from rest_framework.decorators import action
@@ -13,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from ..models import NewsPost, AuctionItem, HistoryAuction, Comment, \
-    EmotionPost, EmotionType, NewsCategory
+    EmotionPost, EmotionType, NewsCategory, User
 from ..paginators import PostPagePagination
 from ..permission import PermissionUserMod
 from ..serializers import PostListSerializer, EmotionPostSerializer, \
@@ -368,6 +369,9 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(**{"post": self.get_object(), "user": request.user})
+        # instance_user_admin = User.objects.filter(Q(is_superuser=True) | Q(is_staff=True) | Q(permission_name="mod"),active = True)
+        self.add_notification(title='Report', message="Bài viết " + self.get_object().title,
+                              user=request.user)
         return Response(ReportPostSerializer(instance, context={"request": request}).data, status=status.HTTP_200_OK)
 
     @action(methods=["PATCH"], detail=True)
@@ -453,5 +457,3 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         instances = NewsCategory.objects.filter(active=True)
         serializer = CategoryPostSerializer(instances, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
