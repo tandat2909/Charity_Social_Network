@@ -151,7 +151,7 @@ REST_FRAMEWORK = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 # CORS_ALLOWED_ORIGINS = ['http://dkmh.ou.edu.vn',]
-
+POST_PAGE_SIZE = 30
 
 NOTIFICATION_MESSAGE = {
     "add_post": {
@@ -196,3 +196,11 @@ FACEBOOK = {
     'id_app': '502879657806363',
     'secret_key': 'a8e308eff516df7638fd7444862d479b',
 }
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'charitysocialnetwork@gmail.com'
+EMAIL_HOST_PASSWORD = 'Tinice@123'
+EMAIL_PORT = 587

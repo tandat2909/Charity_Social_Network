@@ -3,6 +3,7 @@ from collections import OrderedDict
 import rest_framework
 from django.conf import settings
 from django.db.models import Q
+from django.http import QueryDict
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status
 from rest_framework.decorators import action
@@ -13,6 +14,7 @@ from rest_framework.permissions import IsAdminUser, OR
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
+from ..filters import DjangoFilterBackendCustom
 from ..models import NewsPost, AuctionItem, HistoryAuction, Comment, \
     EmotionPost, EmotionType, NewsCategory, User
 from ..paginators import PostPagePagination
@@ -31,7 +33,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     # lookup_url_kwarg = "user"
     list_action_upload_file = ["create", 'update', 'partial_update', 'create_report']
     pagination_class = PostPagePagination
-    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [DjangoFilterBackendCustom, OrderingFilter, SearchFilter]
     filterset_fields = [
         'category',
         'hashtag',
@@ -57,6 +59,8 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     ]
 
     # permission_classes = [permissions.IsAuthenticated]
+
+
 
     def get_permissions(self):
         if self.action in ['list', 'get_comments', 'get_emotion_post', 'retrieve', 'category']:
@@ -184,10 +188,17 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         '''
 
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
-        instance = serializer.save(**{"user": request.user, 'hashtag': request.data.get('hashtag', None)})
+        serializer.is_valid(raise_exception=True)
+        # print(request.data,type(request.data.getlist("hashtag",None)))
+        hashtag = None
+        try:
+            hashtag = request.data.getlist("hashtag", None)
+        except:
+            hashtag = request.data.get("hashtag", None)
+        instance = serializer.save(**{"user": request.user, 'hashtag': hashtag})
         self.add_notification(**settings.NOTIFICATION_MESSAGE.get("add_post"))
+
         return Response(PostSerializer(instance, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
@@ -369,9 +380,19 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(**{"post": self.get_object(), "user": request.user})
-        # instance_user_admin = User.objects.filter(Q(is_superuser=True) | Q(is_staff=True) | Q(permission_name="mod"),active = True)
-        self.add_notification(title='Report', message="Bài viết " + self.get_object().title,
-                              user=request.user)
+        instance_user_admin = User.objects.filter((
+                                                          Q(is_superuser=True) |
+                                                          Q(is_staff=True) |
+                                                          Q(user_permissions__codename__contains='mod')
+                                                  )
+                                                  & Q(is_active=True))
+
+        for user in instance_user_admin:
+            self.add_notification(title='Report', message="Bài viết " + self.get_object().title, user=user)
+
+        request.user.email_user(subject="[Charity Social Network][Report]",
+                                message=instance.__str__()
+                                        +"\n Cảm ơn bạn đã Report chúng tôi sẽ xem xét và gửi thông báo cho bạn sớm nhất")
         return Response(ReportPostSerializer(instance, context={"request": request}).data, status=status.HTTP_200_OK)
 
     @action(methods=["PATCH"], detail=True)
@@ -414,6 +435,9 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                                           self.get_object().title,
                                   user=instance_history_auction.user
                                   )
+            instance_history_auction.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]",
+                                                     message="Chúc mừng bạn là người chiến thắng đấu giá"
+                                                     )
 
             return Response(AuctionItemSerializer(instance_auction_item).data, status=status.HTTP_200_OK)
         except AuctionItem.DoesNotExist:
@@ -448,6 +472,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                                       username=request.user.get_full_name(),
                                       price=str(offer),
                                       post_title=self.get_object().title))
+            request.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]", message="Bạn đã đấu giá sản phẩm")
             return Response(serializer_history.data, status=status.HTTP_200_OK)
         except AuctionItem.DoesNotExist:
             raise rest_framework.exceptions.NotFound("Bài viết không phải loại bài viết đấu giá")

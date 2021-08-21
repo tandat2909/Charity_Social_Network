@@ -296,10 +296,13 @@ class PostCreateSerializer(ModelSerializer):
         return attrs
 
     def add_hashtag(self, post, hashtags, **kwargs):
-        # print(hashtags,'sdfsdf',type(hashtags))
+        if not type(hashtags) is list:
+            raise rest_framework.exceptions.ValidationError(
+                {"hashtag": "yêu cầu một danh sách các hash tag không phải một chuỗi"})
         for item in hashtags:
             instance_hashtag, create = Hashtag.objects.get_or_create(name=item)
             post.hashtag.add(instance_hashtag)
+
 
     def create(self, validated_data, **kwargs):
 

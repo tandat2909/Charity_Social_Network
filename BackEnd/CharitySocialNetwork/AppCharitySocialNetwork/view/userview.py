@@ -26,7 +26,7 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
 
     queryset = User.objects.exclude(Q(is_superuser=True) | Q(is_active=False))
 
-    list_action_upload_file = ["create", ]
+    list_action_upload_file = ["create",'create_report' ]
 
     def get_serializer_class(self):
         '''
@@ -96,13 +96,16 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
             'request': request
         }).data, status.HTTP_200_OK)
 
-    @action(methods=["POST"], detail=False, url_path="report")
+    @action(methods=["post"], detail=False, url_path="report")
     def create_report(self, request, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if serializer.validated_data.get("user_report").id == request.user.id:
             raise rest_framework.exceptions.ValidationError({"Error": "Bạn không thể report chính bạn"})
         instance = serializer.save(**{"user": request.user})
+        request.user.email_user(subject="[Charity Social Network][Report]",
+                                message=instance.__str__()
+                                        + "\n Cảm ơn bạn đã Report chúng tôi sẽ xem xét và gửi thông báo cho bạn sớm nhất")
         return Response(ReportUserSerializer(instance, context={"request": request}).data,
                         status=status.HTTP_200_OK)
 

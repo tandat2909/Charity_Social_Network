@@ -95,7 +95,11 @@ class ReportPost(ModelBase):
     reason = models.ForeignKey(OptionReport, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
-        return self.content
+        return 'Nội dung Report:\n'\
+                'Bài viết: {title} \n' \
+               'Lý do:{reason}\n' \
+               'Nội dung: {content}\n' \
+            .format(title=self.post.title, reason=self.reason.content, content=self.content)
 
 
 class ReportUser(ModelBase):
@@ -107,7 +111,11 @@ class ReportUser(ModelBase):
     reason = models.ForeignKey(OptionReport, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
-        return self.user.get_full_name() + " => " + self.user_report.get_full_name()
+        return 'Nội dung Report:\n'\
+               'User: {fullname} \n' \
+               'Lý do:{reason}\n' \
+               'Nội dung: {content}\n' \
+            .format(fullname=self.user.get_full_name() or self.user.username, reason=self.reason.content, content=self.content)
 
 
 class AuctionItem(ModelBase):

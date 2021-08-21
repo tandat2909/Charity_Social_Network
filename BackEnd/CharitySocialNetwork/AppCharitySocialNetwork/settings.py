@@ -1,1 +1,0 @@
-POST_PAGE_SIZE = 30
