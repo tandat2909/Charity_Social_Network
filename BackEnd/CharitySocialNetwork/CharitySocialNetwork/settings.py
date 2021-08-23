@@ -44,6 +44,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'cloudinary',
+    'ckeditor',
+    'ckeditor_uploader',
+    'dropbox'
 ]
 
 MIDDLEWARE = [
@@ -73,6 +76,7 @@ TEMPLATES = [
             ],
         },
     },
+
 ]
 
 WSGI_APPLICATION = 'CharitySocialNetwork.wsgi.application'
@@ -151,6 +155,7 @@ REST_FRAMEWORK = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 # CORS_ALLOWED_ORIGINS = ['http://dkmh.ou.edu.vn',]
+
 POST_PAGE_SIZE = 30
 
 NOTIFICATION_MESSAGE = {
@@ -197,10 +202,18 @@ FACEBOOK = {
     'secret_key': 'a8e308eff516df7638fd7444862d479b',
 }
 
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'charitysocialnetwork@gmail.com'
 EMAIL_HOST_PASSWORD = 'Tinice@123'
 EMAIL_PORT = 587
+
+CKEDITOR_UPLOAD_PATH = 'images/newspost/'
+
+# DROPBOX_OAUTH2_TOKEN = configLocal.dropbox.get("access_token")
+# DROPBOX_ROOT_PATH = '/images/'
+# DROPBOX_TIMEOUT = 100
+# DROPBOX_WRITE_MODE = 'add'
+# CKEDITOR_ALLOW_NONIMAGE_FILES = True
+#

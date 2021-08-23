@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 from . import views
 from rest_framework import routers
 
@@ -16,4 +16,5 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('accounts/login/', views.Login.as_view()),
     path('accounts/logout/', views.logouts),
+    re_path(r'^ckeditor/',include('ckeditor_uploader.urls'))
 ]

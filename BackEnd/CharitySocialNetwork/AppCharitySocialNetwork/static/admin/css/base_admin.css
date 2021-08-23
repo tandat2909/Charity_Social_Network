@@ -1,0 +1,62 @@
+
+#branding .dropdown-menu{
+    background-color: #323743!important;
+    padding-top: 0;
+    border: 0;
+    box-shadow: 1px 1px 15px rgb(0 0 0 / 10%);
+    margin-top: 8px;
+}
+
+
+.nav-right-notifi,.nav-right-user{
+    right: 0;
+    left: auto;
+    color: #b2b9bf;
+}
+
+.ms-2{
+    margin-left: .5rem!important;
+}
+.nav-right-user.dropdown-menu .with-arrow{
+    right: 0;
+}
+.dropdown-menu .dropdown-item{
+    padding: .65rem 1rem;
+}
+.dropdown-menu .dropdown-item span,.dropdown-menu .dropdown-item h5{
+    margin-left: 0.5em;
+    color: #b2b9bf;
+
+}
+.dropdown-item:focus,.dropdown-item:hover {
+    background-color: #04040470;
+}
+.nav-right-notifi .notifications{
+    overflow: auto;
+    touch-action: auto;
+    height: 300px;
+}
+.scrolls-custom::-webkit-scrollbar-track
+{
+	/*-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);*/
+	/*background-color: rgba(0,0,0,.2);*/
+}
+
+.scrolls-custom::-webkit-scrollbar
+{
+	width: 7px;
+    color: rgba(252, 252, 252, 1);
+}
+
+.scrolls-custom::-webkit-scrollbar-thumb
+{
+	background-color: rgb(116 76 236);
+	/*border: 1px solid #cd3131;*/
+}
+#sideNav{
+    cursor: pointer;
+}
+
+body{
+    background: red;
+}

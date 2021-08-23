@@ -3,7 +3,7 @@ import datetime
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from cloudinary.models import CloudinaryField
-
+from ckeditor.fields import RichTextField
 
 # Create your models here.
 
@@ -46,8 +46,9 @@ class NewsCategory(ModelBase):
 
 
 class NewsPost(ModelBase):
+
     name = None
-    content = models.TextField()
+    content = RichTextField(null=False)
     title = models.CharField(max_length=255)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, )
     category = models.ForeignKey(NewsCategory, on_delete=models.SET_NULL, null=True, related_name='category')
@@ -56,6 +57,7 @@ class NewsPost(ModelBase):
     comments = models.ManyToManyField('Comment', blank=True, related_query_name="comments")
     reports = models.ManyToManyField('ReportPost', blank=True, related_query_name="reports")
     emotions = models.ManyToManyField("EmotionPost", blank=True, related_query_name="emotions")
+
 
     def __str__(self):
         return self.title
@@ -96,10 +98,10 @@ class ReportPost(ModelBase):
 
     def __str__(self):
         return 'Nội dung Report:\n'\
-                'Bài viết: {title} \n' \
+               'Bài viết: {title} \n' \
                'Lý do:{reason}\n' \
                'Nội dung: {content}\n' \
-            .format(title=self.post.title, reason=self.reason.content, content=self.content)
+            .format(title=self.post.title, reason=self.reason, content=self.content)
 
 
 class ReportUser(ModelBase):

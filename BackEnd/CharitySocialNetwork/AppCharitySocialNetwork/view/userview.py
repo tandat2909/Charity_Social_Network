@@ -142,24 +142,3 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
         except ValueError:
             raise rest_framework.exceptions.ValidationError(
                 {"error": "Yêu cầu có tham số id và tham số kiểu dữ liệu là Int"})
-        # if request.method == 'DELETE':
-        #     try:
-        #         instance = request.user.notifications.get(pk=request.query_params.get('id'),active=True)
-        #         return self.delete_custom(request, instance)
-        #     except Notification.DoesNotExist:
-        #         raise rest_framework.exceptions.NotFound({"notification": "Id notification not Exist"})
-        #     except ValueError:
-        #         raise rest_framework.exceptions.ValidationError(
-        #             {"error": "Yêu cầu có tham số id và tham số kiểu dữ liệu là Int"})
-        #
-        # if request.method == "PATCH":
-        #     try:
-        #         instance = request.user.notifications.get(pk=request.query_params.get('id'))
-        #         instance.new = False
-        #         instance.save()
-        #         return Response(status=status.HTTP_200_OK)
-        #     except Notification.DoesNotExist:
-        #         raise rest_framework.exceptions.NotFound({"notification": "Thông báo không tồn tại"})
-        #     except ValueError:
-        #         raise rest_framework.exceptions.ValidationError(
-        #             {"error": "Yêu cầu có tham số id và tham số kiểu dữ liệu là Int"})
