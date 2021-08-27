@@ -1,5 +1,9 @@
+import datetime
+import decimal
+import re
 from collections import OrderedDict
 
+import cloudinary
 import rest_framework
 from django.conf import settings
 from django.db.models import Q
@@ -16,7 +20,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from ..filters import DjangoFilterBackendCustom
 from ..models import NewsPost, AuctionItem, HistoryAuction, Comment, \
-    EmotionPost, EmotionType, NewsCategory, User
+    EmotionPost, EmotionType, NewsCategory, User, Hashtag
 from ..paginators import PostPagePagination
 from ..permission import PermissionUserMod
 from ..serializers import PostListSerializer, EmotionPostSerializer, \
@@ -60,8 +64,6 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
     # permission_classes = [permissions.IsAuthenticated]
 
-
-
     def get_permissions(self):
         if self.action in ['list', 'get_comments', 'get_emotion_post', 'retrieve', 'category']:
             return [permissions.AllowAny(), ]
@@ -103,6 +105,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
         data = self.get_serializer(self.get_object()).data.copy()
         data["historyauction"] = []
+
         try:
             if request.user.is_authenticated and AuctionItem.objects.filter(post=self.get_object().id).exist():
                 instance_history_auction_of_user_current = HistoryAuction.objects.get(user=request.user.id,
@@ -114,7 +117,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                 his_auc_dic["user"] = instance_history_auction_of_user_current.user
                 his_auc_dic["created_date"] = instance_history_auction_of_user_current.created_date
                 data["historyauction"] = [his_auc_dic, ]
-                print(data)
+                # print(data)
         except HistoryAuction.DoesNotExist:
             print("user không đấu giá")
         finally:
@@ -191,28 +194,31 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
         serializer.is_valid(raise_exception=True)
         # print(request.data,type(request.data.getlist("hashtag",None)))
-        hashtag = None
+
         try:
             hashtag = request.data.getlist("hashtag", None)
         except:
             hashtag = request.data.get("hashtag", None)
         instance = serializer.save(**{"user": request.user, 'hashtag': hashtag})
+
         self.add_notification(**settings.NOTIFICATION_MESSAGE.get("add_post"))
 
         return Response(PostSerializer(instance, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        if not self.get_object().is_show:
-            raise rest_framework.exceptions.NotFound()
-
-        if request.user.id == self.get_object().user.id:
-            hashtag = request.data.get("hashtag", None)
-            kwargs["hashtag"] = hashtag
+        if self.is_instance_of_user(request, self.get_object()):
             return super().update(request, *args, **kwargs)
         raise PermissionDenied()
 
-    def perform_update(self, serializer):
-        serializer.save(**{"is_show": False})
+    def perform_update(self, serializer, **kwargs):
+        try:
+            hashtag = self.request.data.getlist("hashtag", None)
+        except:
+            hashtag = self.request.data.get("hashtag", None)
+        kwargs["hashtag"] = hashtag
+        kwargs["is_show"] = False
+        # print("update view: hashtag: ", hashtag)
+        serializer.save(**kwargs)
         self.add_notification(**settings.NOTIFICATION_MESSAGE.get("update_post"))
 
     @action(methods=["PATCH"], detail=True, url_path="is-post-allowed")
@@ -234,14 +240,27 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         '''
             Trả về tất cả bài viết của user đang đăng nhập bao gồm các bài chưa duyệt của user
             Cần đăng nhập tài khoản user
+            filter:
+                + có tất cả các tham số filter list post
+                + thêm filter bài viết chưa duyệt hoặc đã duyệt bài của user đang đăng nhập
+                    - browser = 1 : filter lấy tất cả bài viết được duyệt
+                    - browser = 0 : filter lấy tất cả bài viết chưa duyệt
+
+
         '''
+        browser = request.query_params.get("browser", None)
         queryset = self.filter_queryset(self.get_queryset().filter(user=request.user.id))
+        if browser:
+            try:
+                queryset = queryset.filter(is_show=bool(int(browser)))
+            except:
+                pass
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=["GET"], detail=False, url_path="list_pending_post")
     def get_list_pending_post(self, request):
@@ -351,7 +370,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         </pre>
         """
         if request.query_params.get("action", '').__eq__('delete'):
-            ins = EmotionPost.objects.get(author_id=request.user.id, post_id=self.get_object().id).delete()
+            EmotionPost.objects.get(author_id=request.user.id, post_id=self.get_object().id).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         data = {
@@ -392,7 +411,8 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
         request.user.email_user(subject="[Charity Social Network][Report]",
                                 message=instance.__str__()
-                                        +"\n Cảm ơn bạn đã Report chúng tôi sẽ xem xét và gửi thông báo cho bạn sớm nhất")
+                                        + "\n Cảm ơn bạn đã Report chúng tôi sẽ xem xét "
+                                          "và gửi thông báo cho bạn sớm nhất")
         return Response(ReportPostSerializer(instance, context={"request": request}).data, status=status.HTTP_200_OK)
 
     @action(methods=["PATCH"], detail=True)
@@ -447,38 +467,101 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         except NewsPost.DoesNotExist:
             raise rest_framework.exceptions.NotFound("Bài viết không tồn tại")
 
+    def is_show(self):
+        """
+            Kiểm tra bài viết sẵn sàng hiển thị cho người dùng xem hay chưa
+            nếu bài viết sãn sàng return True ngược return throw exception, kèm mã lỗi status code 404 cho client
+        :return: True
+        :exception rest_framework.exceptions.NotFound
+        """
+        if not self.get_object().is_show:
+            raise rest_framework.exceptions.NotFound({"error": "Bài viết đang chờ được duyệt"})
+        return True
+
     @action(methods=["PATCH"], detail=True, url_path="offer")
     def offer_item(self, request, pk, **kwargs):
+        self.is_show()
         offer = request.data.get("offer", None)
         if offer is None:
             raise rest_framework.exceptions.NotFound({"offer": "field is not empty"})
         try:
             instance_auction_item = AuctionItem.objects.get(post=self.get_object().id)
+            # print(instance_auction_item.start_datetime, instance_auction_item.end_datetime)
+
+            if instance_auction_item.start_datetime.timestamp() > datetime.datetime.now().timestamp():
+                raise rest_framework.exceptions.ValidationError({"error": "Phiên đấu giá chưa bắt đầu"})
             if not self.is_between_time(instance_auction_item.start_datetime, instance_auction_item.end_datetime):
                 raise rest_framework.exceptions.ValidationError({"error": "Phiên đấu giá đã kết thúc"})
-            if offer <= instance_auction_item.price_start:
+            try:
+                if decimal.Decimal(offer) <= instance_auction_item.price_start:
+                    raise rest_framework.exceptions.ValidationError(
+                        {"offer": "offer không hợp lệ giá phải lớn hơn hoặc bằng giá khởi điểm"})
+            except decimal.InvalidOperation:
                 raise rest_framework.exceptions.ValidationError(
-                    {"offer": "offer không hợp lệ giá phải lớn hơn hoặc bằng giá khởi điểm"})
+                    {"offer": "Yêu cầu một số lớn hơn 0, Không phải chuỗi"})
+
             history_data = {
-                "user": request.user.id,
-                "price": offer,
-                "post": self.get_object().id
+                "user": request.user,
+                "post": self.get_object()
             }
-            serializer_history = HistoryAuctionCreateSerializer(data=history_data)
-            serializer_history.is_valid(raise_exception=True)
-            serializer_history.save()
-            self.add_notification(title="Thông báo có giá mới", user=self.get_object().user,
-                                  message='{username} đề nghị giá {price} VNĐ cho bài viết {post_title}'.format(
-                                      username=request.user.get_full_name(),
-                                      price=str(offer),
-                                      post_title=self.get_object().title))
-            request.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]", message="Bạn đã đấu giá sản phẩm")
-            return Response(serializer_history.data, status=status.HTTP_200_OK)
+
+            try:
+                instance = HistoryAuction.objects.get(**history_data)
+                instance.price = offer
+                instance.save()
+                message = 'Bạn vừa cập nhật giá {price} VNĐ cho bài viết {post_title}'.format(
+                    price=str(offer),
+                    post_title=self.get_object().title)
+
+                self.add_notification(title="Thông báo có giá mới", user=self.get_object().user, message=message)
+                request.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]", message=message)
+                return Response({'success': "Cập nhật giá thành công", **HistoryAuctionCreateSerializer(instance).data},
+                                status=status.HTTP_200_OK)
+            except HistoryAuction.DoesNotExist:
+                instance = HistoryAuction.objects.create(**history_data, price=offer)
+                self.add_notification(title="Thông báo có giá mới", user=self.get_object().user,
+                                      message='{username} đề nghị giá {price} VNĐ cho bài viết {post_title}'.format(
+                                          username=request.user.get_full_name(),
+                                          price=str(offer),
+                                          post_title=self.get_object().title))
+                request.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]",
+                                        message="Bạn đã đấu giá sản phẩm")
+                return Response(HistoryAuctionCreateSerializer(instance).data, status=status.HTTP_201_CREATED)
+
         except AuctionItem.DoesNotExist:
             raise rest_framework.exceptions.NotFound("Bài viết không phải loại bài viết đấu giá")
+
+    @action(methods=["DELETE"], url_path="hashtag/(?P<hash_tag_id>[a-z0-9]+)/delete", detail=True)
+    def delete_hashtag(self, request, pk, hash_tag_id, **kwargs):
+        try:
+            if self.is_instance_of_user(request, self.get_object()):
+                # print(hash_tag_id, pk, kwargs)
+                instance_post = self.get_object()
+                instance_post.hashtag.get(pk=hash_tag_id).delete()
+
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            raise rest_framework.exceptions.PermissionDenied()
+        except ValueError as ex:
+            return Response({"error": ex.__str__()}, status=status.HTTP_400_BAD_REQUEST)
+        except Hashtag.DoesNotExist:
+            return Response({"error": "Bài viết không có hash tag này"}, status=status.HTTP_404_NOT_FOUND)
 
     @action(methods=["GET"], detail=False, url_path="category", )
     def category(self, request):
         instances = NewsCategory.objects.filter(active=True)
         serializer = CategoryPostSerializer(instances, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=["POST"], detail=False, url_path="ckeditor/upload")
+    def ckeditor_upload(self, request, **kwargs):
+        try:
+            uploaded_file = request.FILES["upload"]
+            file = cloudinary.uploader.upload(uploaded_file)
+            # print("sssssss",file.get("secure_url",None))
+            filename = file.get("public_id")
+            url = file.get("secure_url")
+            retdata = {"url": url, "uploaded": "1", "fileName": filename}
+            return Response(retdata, status=status.HTTP_200_OK)
+
+        except:
+            return Response({'error': "Lỗi upload file"}, status=400)

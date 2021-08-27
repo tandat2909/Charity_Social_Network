@@ -21,7 +21,7 @@ class ModelBase(models.Model):
         ordering = ['id']
 
     def __str__(self):
-        return self.name
+        return self.name or ""
 
 
 class User(AbstractUser):
@@ -48,10 +48,11 @@ class NewsCategory(ModelBase):
 class NewsPost(ModelBase):
 
     name = None
+    description = models.TextField()
     content = RichTextField(null=False)
     title = models.CharField(max_length=255)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, )
-    category = models.ForeignKey(NewsCategory, on_delete=models.SET_NULL, null=True, related_name='category')
+    category = models.ForeignKey(NewsCategory, on_delete=models.SET_NULL, null=True, related_name='post')
     hashtag = models.ManyToManyField('Hashtag', blank=True)
     is_show = models.BooleanField(default=False, help_text="Chỉ người duyệt bài mới cho phép thay đổi")
     comments = models.ManyToManyField('Comment', blank=True, related_query_name="comments")

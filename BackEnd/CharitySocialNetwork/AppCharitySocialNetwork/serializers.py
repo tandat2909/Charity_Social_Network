@@ -1,6 +1,7 @@
 import rest_framework.exceptions
 from cloudinary import CloudinaryResource, models as cloudmodels
 from cloudinary.forms import CloudinaryJsFileField, CloudinaryUnsignedJsFileField
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework.serializers import *
 from django.contrib.auth.models import Group, Permission
@@ -92,12 +93,12 @@ class UserRegisterSerializer(ModelSerializer):
     #     return attrs
 
     def create(self, validated_data):
-        avatar = validated_data.get("avatar", None)
-        print(type(avatar))
+        # avatar = validated_data.get("avatar", None)
+        # print(type(avatar))
         u = User(**validated_data)
         u.set_password(u.password)
         u.save()
-        print(u.avatar.url)
+        # print(u.avatar.url)
         return self.add_group_permission(user=u)
 
     def add_group_permission(self, user):
@@ -256,6 +257,9 @@ class HistoryAuctionCreateSerializer(ModelSerializer):
         model = HistoryAuction
         fields = ["id", "price", "user", 'description', 'post']
 
+    def create(self, validated_data):
+        pass
+
 
 class PostListSerializer(PostSerializer):
     class Meta(PostSerializer.Meta):
@@ -276,9 +280,8 @@ class PostCreateSerializer(ModelSerializer):
     hashtag = ListSerializer(child=CharField(required=False, max_length=100), required=False)
     price_start = DecimalField(required=False, max_digits=50, decimal_places=2)
     # YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM|-HH:MM|Z]
-    start_datetime = DateTimeField(required=False, )
+    start_datetime = DateTimeField(required=False)
     end_datetime = DateTimeField(required=False)
-
 
     class Meta:
         model = NewsPost
@@ -289,20 +292,33 @@ class PostCreateSerializer(ModelSerializer):
             'id': {'read_only': True},
         }
 
-    def validate(self, attrs):
-        # print(attrs)
-        if attrs.get("category", None) is None:
-            raise rest_framework.exceptions.ValidationError({"Category": "fields not empty"})
-        return attrs
+    def valid_start_datetime(self, date):
+        # print("valid_start_datetime", date, date.timestamp(), datetime.datetime.now().timestamp(), type(date),
+        #       type(datetime.datetime.now()))
+
+        if date.timestamp() >= datetime.datetime.now().timestamp():
+            return True
+        raise ValidationError({"start_date": "Ngày bắt đầu phải lớn hơn hoặc bằng ngày hiện tại"})
+
+    def valid_end_datetime(self, date, **kwargs):
+        start_datetime = kwargs.get('start_datetime', datetime.datetime.now())
+        end_datetime = date
+        if self.valid_start_datetime(start_datetime) and end_datetime.timestamp() >= start_datetime.timestamp():
+            return True
+        raise ValidationError({"end_date": "thời gian kết thúc phải lớn hơn hoặc bằng thời gian bắt đầu"})
 
     def add_hashtag(self, post, hashtags, **kwargs):
-        if not type(hashtags) is list:
-            raise rest_framework.exceptions.ValidationError(
-                {"hashtag": "yêu cầu một danh sách các hash tag không phải một chuỗi"})
-        for item in hashtags:
-            instance_hashtag, create = Hashtag.objects.get_or_create(name=item)
-            post.hashtag.add(instance_hashtag)
-
+        action = kwargs.get("action", 'create')
+        if hashtags:
+            if not type(hashtags) is list:
+                raise rest_framework.exceptions.ValidationError(
+                    {"hashtag": "yêu cầu một danh sách các hash tag không phải một chuỗi"})
+            for item in hashtags:
+                instance_hashtag, create = Hashtag.objects.get_or_create(name=item)
+                if not create and action == 'update':
+                    continue
+                instance_hashtag, create = Hashtag.objects.get_or_create(name=item)
+                post.hashtag.add(instance_hashtag)
 
     def create(self, validated_data, **kwargs):
 
@@ -311,6 +327,8 @@ class PostCreateSerializer(ModelSerializer):
             'start_datetime': validated_data.pop("start_datetime", None),
             'end_datetime': validated_data.pop("end_datetime", None)
         }
+        if validated_data.get("category", None) is None:
+            raise rest_framework.exceptions.ValidationError({"Category": "fields not empty"})
 
         # print(data_auction)
         hashtag = validated_data.pop("hashtag", None)
@@ -319,7 +337,7 @@ class PostCreateSerializer(ModelSerializer):
         self.add_hashtag(instance_news_post, hashtag)
 
         # kiểm tra bài viết có phải là danh mục đấu giá không
-        if instance_news_post.category.id == 1:
+        if instance_news_post.category.id == settings.CATEGORY_POST_AUCTION:
             data_auction["post"] = instance_news_post.id
             try:
                 serializer_auction = AuctionItemModelSerializer(data=data_auction)
@@ -331,13 +349,43 @@ class PostCreateSerializer(ModelSerializer):
         return instance_news_post
 
     def update(self, instance, validated_data):
-        price_start = validated_data.pop("price_start", None)
+        """
+            update cập nhật hashtag hoặc tạo mới
+            cập nhật phần đấu giá kiểm tra nó có phải bài đấu giá không
+            không cho cập nhật ngày bắt đầu bé hơn ngày kết thúc và ngày hiện tại
+
+        :param instance:
+        :param validated_data:
+        :return:
+        """
+        fields_auction = ["price_start", 'start_datetime', 'end_datetime']
+        is_update_auction_post = True if True in [field in validated_data.keys() for field in
+                                                  fields_auction] else False
+        # print(is_update_auction_post)
+        if is_update_auction_post:
+            if instance.category.id == settings.CATEGORY_POST_AUCTION:
+                try:
+                    start_datetime = validated_data.pop("start_datetime", None)
+                    end_datetime = validated_data.pop("end_datetime", None)
+
+                    instance_auction_item = AuctionItem.objects.get(post=instance)
+                    if start_datetime and self.valid_start_datetime(start_datetime):
+                        instance_auction_item.start_datetime = start_datetime or instance_auction_item.start_datetime
+
+                    if end_datetime and self.valid_end_datetime(start_datetime=instance_auction_item.start_datetime,
+                                                                date=end_datetime):
+                        instance_auction_item.end_datetime = end_datetime or instance_auction_item.end_datetime
+                    instance_auction_item.price_start = validated_data.get("price_start",
+                                                                           instance_auction_item.price_start)
+                    instance_auction_item.save()
+                except AuctionItem.DoesNotExist:
+                    raise Exception({'error': "Cập nhật thất bại, Đây không phải loại bài viết đấu giá"})
+            else:
+                raise Exception({'error': "Cập nhật thất bại, Đây không phải loại bài viết đấu giá"})
+        # print("update serializer: ", validated_data)
         hashtag = validated_data.pop("hashtag", None)
-        self.add_hashtag(instance, hashtag)
-        if price_start is not None:
-            ai = AuctionItem.objects.get(post_id=instance.id)
-            ai.price_start = price_start
-            ai.save()
+        # print("update serializer: hashtag: ", hashtag)
+        self.add_hashtag(instance, hashtag, action='update')
         return super().update(instance, validated_data)
 
 

@@ -1,5 +1,7 @@
 import os
 
+import cloudinary
+import rest_framework.exceptions
 from ckeditor_uploader.views import ImageUploadView, get_upload_filename
 from ckeditor_uploader import utils
 from ckeditor_uploader.backends import registry
@@ -47,53 +49,24 @@ def logouts(request):
     logout(request)
     return redirect("/accounts/login")
 
-
-class CKEditorUploadCloud(ImageUploadView):
-    def post(self, request, **kwargs):
-
-        uploaded_file = request.FILES["upload"]
-
-        backend = registry.get_backend()
-
-        ck_func_num = request.GET.get("CKEditorFuncNum")
-        if ck_func_num:
-            ck_func_num = escape(ck_func_num)
-
-        filewrapper = backend(storage, uploaded_file)
-        allow_nonimages = getattr(settings, "CKEDITOR_ALLOW_NONIMAGE_FILES", True)
-        # Throws an error when an non-image file are uploaded.
-        if not filewrapper.is_image and not allow_nonimages:
-            return HttpResponse(
-                """
-                <script type='text/javascript'>
-                window.parent.CKEDITOR.tools.callFunction({0}, '', 'Invalid file type.');
-                </script>""".format(
-                    ck_func_num
-                )
-            )
-
-        filepath = get_upload_filename(uploaded_file.name, request)
-
-        saved_path = filewrapper.save_as(filepath)
-
-        url = utils.get_media_url(saved_path)
-        url =  url
-        if ck_func_num:
-            # Respond with Javascript sending ckeditor upload url.
-            return HttpResponse(
-                """
-            <script type='text/javascript'>
-                window.parent.CKEDITOR.tools.callFunction({0}, '{1}');
-            </script>""".format(
-                    ck_func_num, url
-                )
-            )
-        else:
-            _, filename = os.path.split(saved_path)
-            retdata = {"url": url, "uploaded": "1", "fileName": filename}
-            return JsonResponse(retdata)
-
 #
+# class CKEditorUploadCloud(View):
+#
+#     def post(self, request, **kwargs):
+#         try:
+#             if request.user.is_authenticated:
+#                 uploaded_file = request.FILES["upload"]
+#                 file = cloudinary.uploader.upload(uploaded_file)
+#                 # print("sssssss",file.get("secure_url",None))
+#                 filename = file.get("public_id")
+#                 url = file.get("secure_url")
+#                 retdata = {"url": url, "uploaded": "1", "fileName": filename}
+#                 return JsonResponse(retdata)
+#             raise rest_framework.exceptions.PermissionDenied()
+#         except:
+#             return JsonResponse({'error': "Lỗi upload file"}, status=400)
+#
+# #
 # class BaseViewAPI:
 #     list_action_upload_file = []
 #

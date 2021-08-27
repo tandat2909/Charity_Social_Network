@@ -75,6 +75,7 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.update(request.user, request.data)
         logout(request)
+
         request.auth.revoke()
         return Response(data={'success': 'Change password success'}, status=status.HTTP_200_OK)
 
