@@ -10,7 +10,7 @@ http://creativecommons.org/licenses/by/3.0/
 ------------------------------------------------*/
 body {
     font-family: 'Open Sans', sans-serif;
-    background: rgb(135 135 135) /* nav side, text while */
+
 }
 
 #wrapper {
@@ -1086,6 +1086,7 @@ s {
 .top-navbar {
     background: #86eaff; /*nav header:#ffdcd0*/
     box-shadow: none;
+    top: 0px;
 }
 
 .navbar-side {
@@ -1104,4 +1105,10 @@ s {
     /*border: 4px solid transparent;*/
     background-clip: content-box;
     background-color: rebeccapurple;
+}
+.navbar-side {
+    margin-top: -20px;
+    height: 100%;
+    background: rgb(135 135 135) /* nav side, text while */
+
 }

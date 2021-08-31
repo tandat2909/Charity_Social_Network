@@ -126,17 +126,17 @@ class UserChangePasswordSerializer(ModelSerializer):
     def validate(self, attrs):
 
         if not attrs["password_new"].__eq__(attrs["password_confirm"]):
-            raise ValidationError({"Error": "Password confirm invalid"})
+            raise ValidationError({"password_confirm": "Password confirm invalid"})
         return attrs
 
     def update(self, instance, validated_data):
         if instance.check_password(validated_data["password"]):
             if instance.check_password(validated_data["password_new"]):
-                raise ValidationError({'Error': "The new password is the same as the old password"})
+                raise ValidationError({'password': "The new password is the same as the old password"})
             instance.set_password(validated_data["password_new"])
             instance.save()
             return instance
-        raise ValidationError({'Error': "password invalid"})
+        raise ValidationError({'password': "password không đúng"})
 
 
 # end User

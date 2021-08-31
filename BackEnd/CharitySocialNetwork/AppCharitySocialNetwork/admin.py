@@ -1,6 +1,7 @@
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django import forms
 from django.contrib import admin
+from django.db.models import Count, Q
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group, Permission
@@ -30,9 +31,21 @@ class CustomAdminSite(admin.AdminSite):
                    path('dashboard', self.dashboard)
                ] + super().get_urls()
 
-    def dashboard(self, request):
+    def dashboard(self, request, **kwargs):
         if self.has_permission(request):
-            context = self.get_context(request, "nav_dashboard")
+            count_user_group = Group.objects.annotate(user_count=Count("user")).filter(
+                Q(name="User") | Q(name="Browse Articles")) \
+                .values_list('name', 'user_count')
+
+            grs = {}
+            for name, count in count_user_group:
+                grs[name] = count
+
+            count_user_admin = User.objects.filter(is_superuser=True).count()
+            kwargs["data_user"] = {'Admin':count_user_admin,**grs}
+            print(count_user_group, kwargs)
+            context = self.get_context(request, nav_active="nav_dashboard", **kwargs)
+
             return TemplateResponse(request,
                                     'admin/Dashboard.html', context)
         return redirect_to_login(next='/admin/dashboard', login_url='/admin/login/')
@@ -47,8 +60,9 @@ class CustomAdminSite(admin.AdminSite):
         self.context[nav_active] = "active"
         count_notification = request.user.notifications.filter(new=True).count()
         self.context["count_notification"] = count_notification
-        self.context["title"] = kwargs.get("title", 'Dash Board')
-        return self.context
+        self.context["title"] = kwargs.pop("title", 'Dash Board')
+
+        return {**self.context, **kwargs}
 
     def has_permission(self, request):
         return request.user.is_active and request.user.is_superuser

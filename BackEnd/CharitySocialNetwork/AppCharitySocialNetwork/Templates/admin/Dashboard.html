@@ -2,37 +2,19 @@
 {% load i18n static %}
 {%block script %}
 {{block.super}}
-<script src="{% static 'assets/js/jquery.metisMenu.js'%}"></script>
+<!--<script src="{% static 'assets/js/jquery.metisMenu.js'%}"></script>-->
+<script src="{% static 'assets/js/chart-data.js' %}"></script>
 {% endblock %}
-
+{%block content_header %}
+{% endblock %}
 {% block content_body%}
 <div class="dashboard-cards">
     <div class="row">
         <div class="col-sm-6 col-md-3">
-            <div class="row">
-                <div class="col-5">
-                    <div class="text-center ">
-                        <i class="material-icons dp48">import_export</i>
-                    </div>
-                </div>
-                <div class="col-7">
-                    <div class="card-stacked red row">
-                        <div class="card-content col-12">
-                            <h3>84,198</h3>
-                        </div>
-                        <div class="card-action col-12">
-                            <strong>REVENUE</strong>
-                        </div>
-                    </div>
-                </div>
+            <div class="">
+                <canvas id="user-chart" data-datasets = "{{data_user}}" width="300" height="250" aria-label="Hello ARIA World" role="img"></canvas>
             </div>
-            <!--            <div class="card horizontal cardIcon">-->
-            <!--                <div class="card-image red">-->
-            <!--                    <i class="material-icons dp48">import_export</i>-->
-            <!--                </div>-->
-
         </div>
-
     </div>
     <div class="col-xs-12 col-sm-6 col-md-3">
 
@@ -85,5 +67,5 @@
 
     </div>
 </div>
-</div>
+
 {% endblock %}
