@@ -90,10 +90,10 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
     # @method_decorator(vary_on_headers("Authorization", ))
     @action(methods=["GET"], detail=False, url_path="profile", name="profile")
     def profile(self, request, *args, **kwargs):
-
         if request.user.is_superuser or request.user.is_staff:
             pk = kwargs.get("id")
-            return Response(UserSerializer(self.queryset.get(pk=pk)).data, status.HTTP_200_OK)
+            if pk:
+                return Response(UserSerializer(self.queryset.get(pk=pk)).data, status.HTTP_200_OK)
         return Response(UserSerializer(request.user, context={
             'request': request
         }).data, status.HTTP_200_OK)

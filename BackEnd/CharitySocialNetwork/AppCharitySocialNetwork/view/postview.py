@@ -6,6 +6,7 @@ from collections import OrderedDict
 import cloudinary
 import rest_framework
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.db.models import Q
 from django.http import QueryDict
 from django_filters.rest_framework import DjangoFilterBackend
@@ -21,12 +22,12 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from ..filters import DjangoFilterBackendCustom
 from ..models import NewsPost, AuctionItem, HistoryAuction, Comment, \
     EmotionPost, EmotionType, NewsCategory, User, Hashtag
-from ..paginators import PostPagePagination
+from ..paginators import PostPagePagination, CommentPagePagination
 from ..permission import PermissionUserMod
 from ..serializers import PostListSerializer, EmotionPostSerializer, \
     PostCreateSerializer, PostChangeFieldIsShow, CommentSerializer, CommentCreateSerializer, ReportPostCreateSerializer, \
     PostSerializer, PostDetailSerializer, ReportPostSerializer, AuctionItemSerializer, HistoryAuctionCreateSerializer, \
-    CategoryPostSerializer, HashtagsSerializer
+    CategoryPostSerializer, HashtagsSerializer, UserViewModelSerializer, HistoryAuctionSerializer
 from ..view.baseview import BaseViewAPI, EmotionViewBase
 
 
@@ -99,6 +100,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
         if not self.get_object().is_show:
             raise rest_framework.exceptions.NotFound()
+
         if self.is_instance_of_user(request, self.get_object()):
             return Response(PostDetailSerializer(self.get_object(), context={"request": request}).data,
                             status=status.HTTP_200_OK)
@@ -107,17 +109,11 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         data["historyauction"] = []
 
         try:
-            if request.user.is_authenticated and AuctionItem.objects.filter(post=self.get_object().id).exist():
+            if request.user.is_authenticated and AuctionItem.objects.filter(post=self.get_object().id).exists():
                 instance_history_auction_of_user_current = HistoryAuction.objects.get(user=request.user.id,
                                                                                       post=self.get_object().id,
                                                                                       active=True)
-                his_auc_dic = OrderedDict()
-                his_auc_dic["id"] = instance_history_auction_of_user_current.id
-                his_auc_dic["price"] = instance_history_auction_of_user_current.price
-                his_auc_dic["user"] = instance_history_auction_of_user_current.user
-                his_auc_dic["created_date"] = instance_history_auction_of_user_current.created_date
-                data["historyauction"] = [his_auc_dic, ]
-                # print(data)
+                data["historyauction"] = [HistoryAuctionSerializer(instance_history_auction_of_user_current).data, ]
         except HistoryAuction.DoesNotExist:
             print("user không đấu giá")
         finally:
@@ -130,8 +126,8 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             <b>Filter:</b>
                 Lọc dữ liệu được chỉ định
                <b>Params: </b>
-                    + user = True: lấy tất cả bài viết của user hiện tại bao gồm bài chưa được mod duyệt và đã duyệt theo thời gian giảm dần
-                    + category = <category_id>: trả về list bài viết theo danh mục (loại bài viết)
+                    + user = <id:int>: lấy tất cả bài viết của user theo id được duyệt
+                    + category = <category_id:id>: trả về list bài viết theo danh mục (loại bài viết)
                     + hashtag = <nội dung>: trả về list bài viết có nội dung hashtag cần tìm
                     + created_date: trả về list bài viết từ ngày <data_from> đến <date_to>
                 Ví dụ: ví dụ: http://localhost:8000/api/newspost/?category=1&hashtag=1&hashtag=2
@@ -226,6 +222,8 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = self.get_object()
+        if instance.is_show and serializer.data["is_show"]:
+            return Response({"error": "Bài viết đã được duyệt"}, status=status.HTTP_400_BAD_REQUEST)
         instance.is_show = serializer.data["is_show"]
         instance.save()
         if instance.is_show:
@@ -233,6 +231,18 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                                   user=instance.user,
                                   message="Bài viết {post_title} đã được duyệt".format(post_title=instance.title)
                                   )
+            if instance.category.id == 1:
+                # print(Group.objects.get(name="User").user_set.all())
+                for u in Group.objects.get(name="User").user_set.all():
+                    # print(instance.info_auction.first(), u)
+                    if u.id != instance.user.id:
+                        self.add_notification(title="Sự kiện đấu giá", user=u,
+                                              message="{title} diễn ra vào ngày {start} - {end}".
+                                              format(
+                                                  title=instance.title,
+                                                  start=instance.info_auction.first().start_datetime,
+                                                  end=instance.info_auction.first().end_datetime
+                                              ))
         return Response(status=status.HTTP_200_OK)
 
     @action(methods=["GET"], detail=False, url_path="user")
@@ -287,6 +297,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             # comment_parent = request.query_params.get("comment", None)
             # lấy tất cả comment không có comment_parent
             queryset = self.get_object().comments.filter(active=True)
+            self.pagination_class = CommentPagePagination
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -307,23 +318,25 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                 lưu ý: Nếu không để tham số comment_parent mặc định tạo comment cho bài viết ngược lại nếu có sẽ tạo comment con cho comment
             <b>Require</b>
                 + Yêu cầu đăng nhập
+                + content
         """
-        comment_parent = request.data.pop("comment_parent", None)
-        serializer_comment = CommentCreateSerializer(data=request.data)
+
+        comment_parent = request.data.get("comment_parent", None)
+        serializer_comment = CommentCreateSerializer(data={"content": request.data.get("content", None)})
         serializer_comment.is_valid(raise_exception=True)
         instance_comment = serializer_comment.save(**{"user": request.user})
-        instance_comment_parent = instance_comment
         try:
+
             if comment_parent:
                 instance_comment_parent = self.get_object().comments.get(id=comment_parent)
                 instance_comment_parent.comment_child.add(instance_comment)
                 instance_comment_parent.save()
+                # thông báo cho chủ bài viết
                 self.add_notification(title="Bình luận mới",
                                       user=instance_comment_parent.user,
                                       message=request.user.get_full_name() +
                                               " đã phản hồi bình luận của bạn về bài viết của " +
                                               self.get_object().user.get_full_name())
-
             else:
                 self.get_object().comments.add(instance_comment)
                 self.get_object().save()
@@ -332,7 +345,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                 self.add_notification(title="Bình luận mới",
                                       message=request.user.get_full_name() + " đã bình luận bài viết của bạn",
                                       user=self.get_object().user)
-            return Response(data=CommentSerializer(instance_comment_parent).data, status=status.HTTP_200_OK)
+            return Response(data=CommentSerializer(instance_comment).data, status=status.HTTP_201_CREATED)
         except Comment.DoesNotExist:
             raise rest_framework.exceptions.NotFound({"detail": "comment_parent not exist"})
 
@@ -446,7 +459,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             instance_history_auction.save()
 
             self.add_notification(title="Thông báo đấu giá",
-                                  message="Chúc mừng bạn là người chiến thắng trong buổi đấu giá" + self.get_object().title,
+                                  message="Chúc mừng bạn là người chiến thắng trong buổi đấu giá " + self.get_object().title,
                                   user=instance_history_auction.user
                                   )
             self.add_notification(title="Thông báo thánh toán đấu giá",

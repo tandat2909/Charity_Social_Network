@@ -1073,15 +1073,15 @@ ul.dropdown-menu.dropdown-messages li a div {
      background: #ff7e00;
 }
 
-s {
-    background: #ffdcd0; /*nav header:#ffdcd0*/
-    background: #f44336; /* nav logo ,text while */
-    background: #ebae90; /* nav side, text while */
-    background: #f44f4f6b; /* nav side nav-item befor-hover*/
-    background: #5f5cff87; /* nav side nav-item hover*/
-    background: #d3e11594; /* nav side nav-item active*/
-    background: rgb(254, 255, 250); /* content*/
-}
+/*s {*/
+/*    background: #ffdcd0; !*nav header:#ffdcd0*!*/
+/*    background: #f44336; !* nav logo ,text while *!*/
+/*    background: #ebae90; !* nav side, text while *!*/
+/*    background: #f44f4f6b; !* nav side nav-item befor-hover*!*/
+/*    background: #5f5cff87; !* nav side nav-item hover*!*/
+/*    background: #d3e11594; !* nav side nav-item active*!*/
+/*    background: rgb(254, 255, 250); !* content*!*/
+/*}*/
 
 .top-navbar {
     background: #86eaff; /*nav header:#ffdcd0*/
@@ -1111,4 +1111,7 @@ s {
     height: 100%;
     background: rgb(135 135 135) /* nav side, text while */
 
+}
+div.checkbox-year label,div.checkbox-year input {
+    cursor: pointer;
 }

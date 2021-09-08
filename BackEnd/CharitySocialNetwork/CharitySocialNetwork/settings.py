@@ -156,7 +156,9 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_ALLOW_ALL = True
 # CORS_ALLOWED_ORIGINS = ['http://dkmh.ou.edu.vn',]
 
+# Page number
 POST_PAGE_SIZE = 30
+COMMENT_PAGE_SIZE = 30
 
 NOTIFICATION_MESSAGE = {
     "add_post": {

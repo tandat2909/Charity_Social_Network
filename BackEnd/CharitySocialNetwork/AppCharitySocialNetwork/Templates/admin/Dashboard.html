@@ -8,64 +8,45 @@
 {%block content_header %}
 {% endblock %}
 {% block content_body%}
+
 <div class="dashboard-cards">
     <div class="row">
-        <div class="col-sm-6 col-md-3">
+        <div class="col-sm-6 col-md-6 ">
             <div class="">
-                <canvas id="user-chart" data-datasets = "{{data_user}}" width="300" height="250" aria-label="Hello ARIA World" role="img"></canvas>
+                <canvas id="user-chart" class="m-auto" data-datasets="{{data_user}}" width="320" height="250"
+                        aria-label="Hello ARIA World" role="img"></canvas>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-6">
+            <div class="">
+                <canvas id="post-chart" class="m-auto" data-datasets="{{data_post_auction}}" width="320" height="250"
+                        aria-label="Hello ARIA World" role="img"></canvas>
             </div>
         </div>
     </div>
-    <div class="col-xs-12 col-sm-6 col-md-3">
-
-        <div class="card horizontal cardIcon waves-effect waves-dark">
-            <div class="card-image orange">
-                <i class="material-icons dp48">shopping_cart</i>
+    <div class="col-xs-12 col-sm-6 col-md-12">
+        <div class="col-12 legend">
+            {% now "Y" as current_year %}
+            {% for i in years_have_post %}
+            <div class="form-check form-check-inline checkbox-year">
+                <input class="form-check-input" type="radio" id="nam{{i}}" name="checkbox_year"
+                       value="{{i}}" {% if i|slugify == current_year %} checked {%endif%}>
+                <label class="form-check-label" for="nam{{i}}">Năm {{i}}</label>
             </div>
-            <div class="card-stacked orange">
-                <div class="card-content">
-                    <h3>36,540</h3>
-                </div>
-                <div class="card-action">
-                    <strong>SALES</strong>
-                </div>
-            </div>
+            {% endfor %}
+        </div>
+        <div class="">
+            <canvas id="post-year-bar-chart" class="" width="1200" height="300" aria-label="Hello ARIA World"
+                    role="img"></canvas>
         </div>
     </div>
-    <div class="col-xs-12 col-sm-6 col-md-3">
-
-        <div class="card horizontal cardIcon waves-effect waves-dark">
-            <div class="card-image blue">
-                <i class="material-icons dp48">equalizer</i>
-            </div>
-            <div class="card-stacked blue">
-                <div class="card-content">
-                    <h3>24,225</h3>
-                </div>
-                <div class="card-action">
-                    <strong>PRODUCTS</strong>
-                </div>
-            </div>
+    <div class="col-xs-12 col-sm-6 col-md-12">
+        <div class="">
+            <canvas id="post-month-bar-chart" class="" width="1400" height="400" aria-label="Hello ARIA World"
+                    role="img"></canvas>
         </div>
-
     </div>
-    <div class="col-xs-12 col-sm-6 col-md-3">
 
-        <div class="card horizontal cardIcon waves-effect waves-dark">
-            <div class="card-image green">
-                <i class="material-icons dp48">supervisor_account</i>
-            </div>
-            <div class="card-stacked green">
-                <div class="card-content">
-                    <h3>88,658</h3>
-                </div>
-                <div class="card-action">
-                    <strong>VISITS</strong>
-                </div>
-            </div>
-        </div>
-
-    </div>
 </div>
 
 {% endblock %}

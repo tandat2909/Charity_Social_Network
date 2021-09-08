@@ -27,7 +27,7 @@ class BaseViewAPI:
         except:
             return False
 
-    def add_notification(self, title, message, user=None, request=None, *args, **kwargs):
+    def add_notification(self, title, message, user=None, *args, **kwargs):
         """
             user là instance User được thêm thông báo mặc dịnh sẽ lấy trong request.user
             request: mặc định sẽ lấy self.request của lớp ViewSet
@@ -45,13 +45,13 @@ class BaseViewAPI:
         :return:
         """
         try:
-            user = user or request.user or self.request.user
+            user = user or self.request.user
             n = Notification(title=title, message=message)
             n.save()
             user.notifications.add(n)
             return True
         except Exception as ex:
-            print(ex)
+            print("add_notification:none user ",ex)
             return False
 
     def delete_custom(self, request=None, instance=None, *args, **kwargs):

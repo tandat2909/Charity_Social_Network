@@ -1,18 +1,25 @@
+import datetime
+
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django import forms
 from django.contrib import admin
-from django.db.models import Count, Q
+from django.core import serializers
+from django.db.models import Count, Q, QuerySet, ValueRange, RowRange, F, Func, Window, Exists, Subquery
+from django.db.models.functions import *
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.views import redirect_to_login
+from django.http import HttpResponse
 from django.template.response import TemplateResponse
 from django.urls import path
 from django.utils.translation import gettext, gettext_lazy as _
 from django.utils.safestring import mark_safe
 from oauth2_provider.models import Application
+from rest_framework import status
 from rest_framework.authtoken.models import Token
-
+from rest_framework.response import Response
+from django.http import JsonResponse
 from .models import *
 
 
@@ -20,15 +27,12 @@ class CustomAdminSite(admin.AdminSite):
     site_header = "Charity Social Network"
     index_title = site_header
     index_template = "admin/index.html"
-    context = {
-        'count_notification': None,
-        'title': "Dash Board"
-    }
 
     def get_urls(self):
         return [
                    path('statistical', self.statistical_view),
-                   path('dashboard', self.dashboard)
+                   path('dashboard', self.dashboard),
+                   path('dashboard/statistical-post-year/', self.statistical_post)
                ] + super().get_urls()
 
     def dashboard(self, request, **kwargs):
@@ -40,10 +44,14 @@ class CustomAdminSite(admin.AdminSite):
             grs = {}
             for name, count in count_user_group:
                 grs[name] = count
-
+            grs["total"] = User.objects.all().count()
             count_user_admin = User.objects.filter(is_superuser=True).count()
-            kwargs["data_user"] = {'Admin':count_user_admin,**grs}
+            kwargs["data_user"] = {'Admin': count_user_admin, **grs}
+            kwargs["data_post_auction"] = {k: v for k, v in self.get_statistical_category_post("name")}
+            kwargs["years_have_post"] = self.get_year_has_post()
+            print(self.get_statistical_category_post("name"))
             print(count_user_group, kwargs)
+
             context = self.get_context(request, nav_active="nav_dashboard", **kwargs)
 
             return TemplateResponse(request,
@@ -57,15 +65,98 @@ class CustomAdminSite(admin.AdminSite):
         return redirect_to_login(next='/admin/statistical', login_url='/admin/login/')
 
     def get_context(self, request, nav_active, *args, **kwargs):
-        self.context[nav_active] = "active"
+        context = {nav_active: "active"}
         count_notification = request.user.notifications.filter(new=True).count()
-        self.context["count_notification"] = count_notification
-        self.context["title"] = kwargs.pop("title", 'Dash Board')
-
-        return {**self.context, **kwargs}
+        context["count_notification"] = count_notification
+        context["title"] = kwargs.pop("title", 'Dash Board')
+        return {**context, **kwargs}
 
     def has_permission(self, request):
         return request.user.is_active and request.user.is_superuser
+
+    def get_statistical_category_post(self, *args, **kwargs):
+        sta = NewsCategory.objects.annotate(post_count=Count("post")). \
+            all().values_list(*args, "post_count")
+        return sta
+
+    def get_year_has_post(self):
+        return [i.year for i in NewsPost.objects.dates("created_date", "year","DESC")]
+
+    def get_statistical_month_have_post_by_year(self, year=datetime.datetime.now().year):
+        """
+            Count bài viết những tháng có bài viết theo năm truyền vào
+            Mặc định sẽ lấy năm hiện tại
+        :param year: chỉ định năm cần thống kê
+        :return: return count has post nếu không có trả về mảng rỗng
+        """
+        if type(year) is int:
+            data = {"months": {}}
+            post_month = [i.month for i in
+                          NewsPost.objects.filter(created_date__year=year).dates("created_date", "month")]
+            for m in post_month:
+                data["months"][str(m)] = NewsPost.objects.filter(created_date__year=year, created_date__month=m).count()
+            return data
+        return {"data": []}
+
+    def get_statistical_day_have_post_by_month_year(self, year=datetime.datetime.now().year,
+                                                   month=datetime.datetime.now().month):
+        """
+            Count bài viết những tháng có bài viết theo năm truyền vào
+        :param month: chỉ định tháng cần thông kê
+        :param year: chỉ định năm cần thống kê
+        :return: return count has post nếu không có trả về mảng rỗng
+        """
+        if type(year) is int and type(month) is int:
+            data = {"days": {}}
+            queryset = NewsPost.objects.filter(created_date__year=year, created_date__month=month)
+            post_day = [i.day for i in queryset.dates("created_date", "day")]
+            for d in post_day:
+                data["days"][str(d)] = queryset.filter(created_date__day=d).count()
+            return data
+        return {"data": []}
+
+    def statistical_post(self, request, **kwargs):
+        """
+            request:
+            {
+                year:2021
+            }
+            response:
+            {
+                'data':{
+                    year:2021,
+                    month: {"1":21,"2":3,"3":4,"4":5,"5":4,"6":6,"7":7,"8":8,"9":67,"10":23,"11":34,"12":34 }
+                }
+            },
+
+            request:
+            {
+                year:2021,
+                month:5
+
+            response:
+            {
+                'data':{
+                    year:2021,
+                    month:5
+                    date: {"1":3,...,"30":23}
+                }
+            }
+        """
+        try:
+            year = int(request.GET.get("year"))
+            month = int(request.GET.get("month", 0))
+            if month < 0 or month > 12:
+                return JsonResponse({"error": "Tháng không hợp lệ"})
+            if month == 0:
+                data = self.get_statistical_month_have_post_by_year(year)
+
+            else:
+                data = self.get_statistical_day_have_post_by_month_year(year, month)
+            print(data)
+            return JsonResponse(data, status=status.HTTP_200_OK)
+        except:
+            return JsonResponse({"error": "Năm không hợp lệ"},status=status.HTTP_400_BAD_REQUEST)
 
 
 class BaseModelsAdmin(admin.ModelAdmin):
