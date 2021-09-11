@@ -4,3 +4,4 @@ from .userview import UserView
 from .reportview import ReportViewSet
 from .emotionview import EmotionTypeViewSet
 from .viewcomment import CommentViewSet
+from .auctionveiw import AuctionViewSet

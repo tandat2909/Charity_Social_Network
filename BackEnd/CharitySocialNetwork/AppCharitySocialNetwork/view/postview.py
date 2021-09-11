@@ -15,6 +15,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.mixins import ListModelMixin
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser, OR
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -27,7 +28,8 @@ from ..permission import PermissionUserMod
 from ..serializers import PostListSerializer, EmotionPostSerializer, \
     PostCreateSerializer, PostChangeFieldIsShow, CommentSerializer, CommentCreateSerializer, ReportPostCreateSerializer, \
     PostSerializer, PostDetailSerializer, ReportPostSerializer, AuctionItemSerializer, HistoryAuctionCreateSerializer, \
-    CategoryPostSerializer, HashtagsSerializer, UserViewModelSerializer, HistoryAuctionSerializer
+    CategoryPostSerializer, HashtagsSerializer, UserViewModelSerializer, HistoryAuctionSerializer, \
+    AuctionItemViewSerializer, PostImageSerializer
 from ..view.baseview import BaseViewAPI, EmotionViewBase
 
 
@@ -37,7 +39,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     # lookup_field = {'pk', 'user_id', "user_name", "title"}
     # lookup_url_kwarg = "user"
     list_action_upload_file = ["create", 'update', 'partial_update', 'create_report']
-    pagination_class = PostPagePagination
+    # pagination_class = PostPagePagination
     filter_backends = [DjangoFilterBackendCustom, OrderingFilter, SearchFilter]
     filterset_fields = [
         'category',
@@ -66,7 +68,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ['list', 'get_comments', 'get_emotion_post', 'retrieve', 'category']:
+        if self.action in ['list', 'get_comments', 'get_emotion_post', 'retrieve', 'category',"get_all_image_post_user"]:
             return [permissions.AllowAny(), ]
         if self.action in ["is_post_allowed", "get_list_pending_post"]:
             return [OR(PermissionUserMod(), IsAdminUser()), ]
@@ -163,6 +165,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         # print(request.query_params)
         queryset = self.filter_queryset(self.get_queryset().filter(is_show=True))
         # print(queryset.query)
+        self.pagination_class = PostPagePagination
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -265,6 +268,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                 queryset = queryset.filter(is_show=bool(int(browser)))
             except:
                 pass
+        self.pagination_class = PostPagePagination
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -279,6 +283,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
         """
         queryset = self.filter_queryset(self.get_queryset().filter(is_show=False))
+        self.pagination_class = PostPagePagination
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -328,7 +333,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         try:
 
             if comment_parent:
-                instance_comment_parent = self.get_object().comments.get(id=comment_parent)
+                instance_comment_parent = Comment.objects.get(id=comment_parent)
                 instance_comment_parent.comment_child.add(instance_comment)
                 instance_comment_parent.save()
                 # thông báo cho chủ bài viết
@@ -409,9 +414,19 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     # Report
     @action(methods=["POST"], detail=True, url_path="report")
     def create_report(self, request, pk, **kwargs):
+        """
+            + Chức năng:
+                - Tạo report bài viết
+            + Method: POST
+            + Authorization: True
+            + Request Body:
+
+        """
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(**{"post": self.get_object(), "user": request.user})
+        # todo lấy user ra thông báo cho tất cả admin không được performance
         instance_user_admin = User.objects.filter((
                                                           Q(is_superuser=True) |
                                                           Q(is_staff=True) |
@@ -456,7 +471,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             instance_auction_item.receiver = instance_history_auction.user
             instance_auction_item.price_received = instance_history_auction.price
 
-            instance_history_auction.save()
+            instance_auction_item.save()
 
             self.add_notification(title="Thông báo đấu giá",
                                   message="Chúc mừng bạn là người chiến thắng trong buổi đấu giá " + self.get_object().title,
@@ -472,7 +487,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                                                      message="Chúc mừng bạn là người chiến thắng đấu giá"
                                                      )
 
-            return Response(AuctionItemSerializer(instance_auction_item).data, status=status.HTTP_200_OK)
+            return Response(AuctionItemViewSerializer(instance_auction_item).data, status=status.HTTP_200_OK)
         except AuctionItem.DoesNotExist:
             raise rest_framework.exceptions.NotFound("Bài viết không phải loại bài viết đấu giá")
         except HistoryAuction.DoesNotExist:
@@ -494,55 +509,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     @action(methods=["PATCH"], detail=True, url_path="offer")
     def offer_item(self, request, pk, **kwargs):
         self.is_show()
-        offer = request.data.get("offer", None)
-        if offer is None:
-            raise rest_framework.exceptions.NotFound({"offer": "field is not empty"})
-        try:
-            instance_auction_item = AuctionItem.objects.get(post=self.get_object().id)
-            # print(instance_auction_item.start_datetime, instance_auction_item.end_datetime)
-
-            if instance_auction_item.start_datetime.timestamp() > datetime.datetime.now().timestamp():
-                raise rest_framework.exceptions.ValidationError({"error": "Phiên đấu giá chưa bắt đầu"})
-            if not self.is_between_time(instance_auction_item.start_datetime, instance_auction_item.end_datetime):
-                raise rest_framework.exceptions.ValidationError({"error": "Phiên đấu giá đã kết thúc"})
-            try:
-                if decimal.Decimal(offer) <= instance_auction_item.price_start:
-                    raise rest_framework.exceptions.ValidationError(
-                        {"offer": "offer không hợp lệ giá phải lớn hơn hoặc bằng giá khởi điểm"})
-            except decimal.InvalidOperation:
-                raise rest_framework.exceptions.ValidationError(
-                    {"offer": "Yêu cầu một số lớn hơn 0, Không phải chuỗi"})
-
-            history_data = {
-                "user": request.user,
-                "post": self.get_object()
-            }
-
-            try:
-                instance = HistoryAuction.objects.get(**history_data)
-                instance.price = offer
-                instance.save()
-                message = 'Bạn vừa cập nhật giá {price} VNĐ cho bài viết {post_title}'.format(
-                    price=str(offer),
-                    post_title=self.get_object().title)
-
-                self.add_notification(title="Thông báo có giá mới", user=self.get_object().user, message=message)
-                request.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]", message=message)
-                return Response({'success': "Cập nhật giá thành công", **HistoryAuctionCreateSerializer(instance).data},
-                                status=status.HTTP_200_OK)
-            except HistoryAuction.DoesNotExist:
-                instance = HistoryAuction.objects.create(**history_data, price=offer)
-                self.add_notification(title="Thông báo có giá mới", user=self.get_object().user,
-                                      message='{username} đề nghị giá {price} VNĐ cho bài viết {post_title}'.format(
-                                          username=request.user.get_full_name(),
-                                          price=str(offer),
-                                          post_title=self.get_object().title))
-                request.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]",
-                                        message="Bạn đã đấu giá sản phẩm")
-                return Response(HistoryAuctionCreateSerializer(instance).data, status=status.HTTP_201_CREATED)
-
-        except AuctionItem.DoesNotExist:
-            raise rest_framework.exceptions.NotFound("Bài viết không phải loại bài viết đấu giá")
+        return self.offer(request, post=self.get_object())
 
     @action(methods=["DELETE"], url_path="hashtag/(?P<hash_tag_id>[a-z0-9]+)/delete", detail=True)
     def delete_hashtag(self, request, pk, hash_tag_id, **kwargs):
@@ -575,6 +542,26 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             url = file.get("secure_url")
             retdata = {"url": url, "uploaded": "1", "fileName": filename}
             return Response(retdata, status=status.HTTP_200_OK)
-
         except:
             return Response({'error': "Lỗi upload file"}, status=400)
+
+    @action(methods=["GET"], detail=False, url_path="get-all-image-post-user/(?P<user_id>[0-9]+)")
+    def get_all_image_post_user(self, request, user_id, **kwargs):
+        number = request.query_params.get("amount", None)
+        try:
+            number = int(number)
+            if number <= 0:
+                return Response({"error":" tham số number phải lớn hơn 0"},status=status.HTTP_400_BAD_REQUEST)
+            if number > 50:
+                number = 50
+        except:
+            number = 30
+
+        query_set = self.get_queryset().filter(user=user_id, is_show=True).order_by("-created_date")
+
+        class PageSize(PageNumberPagination):
+            page_size = number
+
+        self.pagination_class = PageSize
+        return self.get_paginated_response(PostImageSerializer(self.paginate_queryset(query_set), many=True).data,)
+

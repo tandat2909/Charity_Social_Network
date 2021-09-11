@@ -8,3 +8,7 @@ class PostPagePagination(PageNumberPagination):
 
 class CommentPagePagination(PageNumberPagination):
     page_size = settings.COMMENT_PAGE_SIZE or PageNumberPagination.page_size or 30
+
+
+class NotificationPagePagination(PageNumberPagination):
+    page_size = settings.NOTIFICATION_PAGE_SIZE or PageNumberPagination.page_size or 30

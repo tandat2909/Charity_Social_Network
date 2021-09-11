@@ -223,11 +223,19 @@ class AuctionItemSerializer(ModelSerializer):
         fields = ["id", "price_start", 'price_received', 'receiver', 'start_datetime', 'end_datetime']
 
 
+class AuctionItemViewSerializer(AuctionItemSerializer):
+    receiver = UserViewModelSerializer()
+
+    class Meta:
+        model = AuctionItemSerializer.Meta.model
+        fields = AuctionItemSerializer.Meta.fields
+
+
 class PostSerializer(ModelSerializer):
     user = UserViewModelSerializer()
     category = CategoryPostSerializer()
     hashtag = HashtagsSerializer(many=True)
-    info_auction = AuctionItemSerializer(many=True)
+    info_auction = AuctionItemViewSerializer(many=True)
     image = ImageField()
 
     class Meta(BaseMeta):
@@ -246,9 +254,12 @@ class HistoryAuctionSerializer(ModelSerializer):
 
     class Meta(BaseMeta):
         model = HistoryAuction
-        fields = ["id", "price", "user", 'description']
+        fields = ["id", "price", "user", 'description', 'created_date', 'update_date']
+
         extra_kwargs = {
-            "user": {"read_only": True}
+            "user": {"read_only": True},
+            'created_date': {"read_only": True},
+            'update_date': {"read_only": True},
         }
 
 
@@ -256,9 +267,6 @@ class HistoryAuctionCreateSerializer(ModelSerializer):
     class Meta:
         model = HistoryAuction
         fields = ["id", "price", "user", 'description', 'post']
-
-    def create(self, validated_data):
-        pass
 
 
 class PostListSerializer(PostSerializer):
@@ -479,3 +487,10 @@ class ReportUserCreateSerializer(ModelSerializer):
 class NotificationSerializer(ModelSerializer):
     class Meta(BaseMeta):
         model = Notification
+
+
+class PostImageSerializer(ModelSerializer):
+    image = ImageField()
+    class Meta:
+        model = NewsPost
+        fields = ["id", "image"]

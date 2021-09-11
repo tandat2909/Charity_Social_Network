@@ -20,7 +20,11 @@ class PermissionUserReport(IsAuthenticated, ):
             'AppCharitySocialNetwork.add_report',
             'AppCharitySocialNetwork.change_report',
             'AppCharitySocialNetwork.view_report',
-            'AppCharitySocialNetwork.view_optionreport'
+            'AppCharitySocialNetwork.view_optionreport',
+            'AppCharitySocialNetwork.add_reportpost',
+            'AppCharitySocialNetwork.change_reportpost',
+            'AppCharitySocialNetwork.view_reportpost',
+            'AppCharitySocialNetwork.view_optionreportpost',
         ])
 
 
@@ -30,5 +34,4 @@ class PermissionUserMod(IsAuthenticated):
         return (super().has_permission(request, view)
                 and request.user.has_perms([
                     'AppCharitySocialNetwork.mod',
-
                 ]))

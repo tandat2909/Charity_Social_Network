@@ -1,14 +1,17 @@
 import datetime
+import decimal
 
 import pytz
+import rest_framework
 from django.db.models import Count
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
 from ..models import Notification, Comment, NewsPost, EmotionType, \
-    EmotionPost
-from ..serializers import EmotionStatisticalSerializer, EmotionPostSerializer
+    EmotionPost, AuctionItem, HistoryAuction
+from ..serializers import EmotionStatisticalSerializer, EmotionPostSerializer, HistoryAuctionCreateSerializer, \
+    HistoryAuctionSerializer
 
 
 class BaseViewAPI:
@@ -51,7 +54,7 @@ class BaseViewAPI:
             user.notifications.add(n)
             return True
         except Exception as ex:
-            print("add_notification:none user ",ex)
+            print("add_notification:none user ", ex)
             return False
 
     def delete_custom(self, request=None, instance=None, *args, **kwargs):
@@ -93,6 +96,65 @@ class BaseViewAPI:
             elif intime <= end:
                 return True
         return False
+
+    def offer(self, request, post=None, instance_auction_item=None):
+        offer = request.data.get("offer", None)
+        if offer is None:
+            raise rest_framework.exceptions.NotFound({"offer": "field is not empty"})
+        if post is None and instance_auction_item is None:
+            raise rest_framework.exceptions.NotFound()
+
+        try:
+            # Nếu bài viết đc truyền vô thì query dữ liệu lấy auction item
+            if post is not None and instance_auction_item is None:
+                instance_auction_item = AuctionItem.objects.get(post=post.id)
+            else:
+                # print(instance_auction_item.post)
+                post = instance_auction_item.post
+            # print(instance_auction_item.start_datetime, instance_auction_item.end_datetime)
+
+            if instance_auction_item.start_datetime.timestamp() > datetime.datetime.now().timestamp():
+                raise rest_framework.exceptions.ValidationError({"error": "Phiên đấu giá chưa bắt đầu"})
+            if not self.is_between_time(instance_auction_item.start_datetime, instance_auction_item.end_datetime):
+                raise rest_framework.exceptions.ValidationError({"error": "Phiên đấu giá đã kết thúc"})
+            try:
+                if decimal.Decimal(offer) <= instance_auction_item.price_start:
+                    raise rest_framework.exceptions.ValidationError(
+                        {"offer": "offer không hợp lệ giá phải lớn hơn hoặc bằng giá khởi điểm"})
+            except decimal.InvalidOperation:
+                raise rest_framework.exceptions.ValidationError(
+                    {"offer": "Yêu cầu một số lớn hơn 0, Không phải chuỗi"})
+
+            history_data = {
+                "user": request.user,
+                "post": post
+            }
+
+            try:
+                instance = HistoryAuction.objects.get(**history_data)
+                instance.price = offer
+                instance.save()
+                message = 'Bạn vừa cập nhật giá {price} VNĐ cho bài viết {post_title}'.format(
+                    price=str(offer),
+                    post_title=post.title)
+
+                self.add_notification(title="Thông báo có giá mới", user=post.user, message=message)
+                request.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]", message=message)
+                return Response({'success': "Cập nhật giá thành công", **HistoryAuctionSerializer(instance).data},
+                                status=status.HTTP_200_OK)
+            except HistoryAuction.DoesNotExist:
+                instance = HistoryAuction.objects.create(**history_data, price=offer)
+                self.add_notification(title="Thông báo có giá mới", user=post.user,
+                                      message='{username} đề nghị giá {price} VNĐ cho bài viết {post_title}'.format(
+                                          username=request.user.get_full_name(),
+                                          price=str(offer),
+                                          post_title=post.title))
+                request.user.email_user(subject="[Charity Social Network][Thông báo đấu giá]",
+                                        message="Bạn đã đấu giá sản phẩm")
+                return Response(HistoryAuctionSerializer(instance).data, status=status.HTTP_201_CREATED)
+
+        except AuctionItem.DoesNotExist:
+            raise rest_framework.exceptions.NotFound("Bài viết không phải loại bài viết đấu giá")
 
 
 class EmotionViewBase:

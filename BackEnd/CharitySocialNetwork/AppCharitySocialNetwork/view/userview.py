@@ -9,24 +9,17 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from ..models import User, Notification
-from ..permission import PermissionUserChange, PermissionUserViewInfo
+from ..paginators import NotificationPagePagination
+from ..permission import PermissionUserChange, PermissionUserViewInfo, PermissionUserMod
 from ..serializers import UserChangePasswordSerializer, \
     ReportUserCreateSerializer, UserRegisterSerializer, NotificationSerializer, UserSerializer, ReportUserSerializer
 from ..view.baseview import BaseViewAPI
 
 
 class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
-    '''
-        Tất cả action API dành cho User
-        url: /api/accounts/
-
-        todo: chưa validate các trường phonenumber,avatar,birthday,gender
-
-    '''
-
     queryset = User.objects.exclude(Q(is_superuser=True) | Q(is_active=False))
 
-    list_action_upload_file = ["create",'create_report' ]
+    list_action_upload_file = ["create", 'create_report']
 
     def get_serializer_class(self):
         '''
@@ -123,12 +116,15 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
 
         """
         if request.method == "GET":
-            queryset = request.user.notifications.filter(active=True)
+            queryset = request.user.notifications.filter(active=True).order_by("-created_date", "-new")
+
+            self.pagination_class = NotificationPagePagination
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
             serializer = self.get_serializer(queryset, many=True)
+            self.pagination_class = None
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         try:
@@ -144,3 +140,15 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
         except ValueError:
             raise rest_framework.exceptions.ValidationError(
                 {"error": "Yêu cầu có tham số id và tham số kiểu dữ liệu là Int"})
+
+    @action(methods=["GET"], url_path="is-user-mod", detail=False)
+    def is_user_mod(self, request, **kwargs):
+        '''
+            + Chức năng:
+                - Kiểm tra user đăng nhập hiện tại có phải là usermod hay không
+            + Resquest body: None
+            + Response body:
+                usermod: giá trị kiểu bool. Nếu usermod = True là user hiện tại là usermod và ngược lại không phải user mod
+        '''
+        per = PermissionUserMod()
+        return Response({"usermod": per.has_permission(request, self)}, status=status.HTTP_200_OK)
