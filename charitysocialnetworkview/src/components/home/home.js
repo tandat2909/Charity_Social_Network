@@ -1,6 +1,4 @@
 import React, { Component } from 'react';
-
-import Banner from '../banner/banner';
 import HomePage from '../banner/home_page';
 import Midle from './midle';
 import BottomGrids from './bottom-grids'
@@ -9,14 +7,19 @@ import Bg from './bg';
 import Causes from './causes';
 import Mission from './mission';
 import Clients from './clients';
-import Footer from '../footer/main_footer';
+import SimpleSlider from '../banner/banner_slick';
+import BannerImage from '../banner/banner-bottom-shape';
 
-class Home extends Component{
+
+
+class Home extends Component {
+
     render() {
-        return(
+       
+        return (
             <div>
-           
-                <Banner></Banner>
+                <SimpleSlider></SimpleSlider>
+                <BannerImage></BannerImage>
                 <HomePage></HomePage>
                 <Midle></Midle>
                 <BottomGrids></BottomGrids>
@@ -25,7 +28,7 @@ class Home extends Component{
                 <Causes></Causes>
                 <Mission></Mission>
                 <Clients></Clients>
-                <Footer></Footer>
+
             </div>
         )
     }

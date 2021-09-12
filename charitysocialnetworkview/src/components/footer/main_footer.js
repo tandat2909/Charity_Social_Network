@@ -2,6 +2,15 @@ import React, { Component } from 'react';
 import FooterContent from './footer_content';
 import FooterFlex from './footer_flex';
 import Session from './session';
+import { withRouter } from 'react-router-dom';
+
+
+const WebsiteFooter = props => {
+    if (props.location.pathname === "/login" || props.location.pathname === "/chat") return null;
+    return (
+        <Footer></Footer>
+    );
+};
 
 
 class Footer extends Component{
@@ -32,4 +41,4 @@ class Footer extends Component{
         )
     }
 }
-export default Footer;
+export default withRouter(WebsiteFooter);

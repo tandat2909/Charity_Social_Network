@@ -1,17 +1,25 @@
 import SearchRight from './search_right';
 import Donate from './donate';
-import React, { Component } from 'react';
+import React, {  useContext } from 'react';
 import { NavLink, Route } from 'react-router-dom';
+import { contexts } from '../../context/context';
+import ProfileMenu from './menu_profile';
+import ShowMessage from './message';
+
 
 
 const MenuLink = ({ label, to, activeOnlyWhenExact }) => {
     return (
         <Route path={to} exact={activeOnlyWhenExact} children={({ match }) => {
             var active = match ? 'active' : '';
-            if(label === "Home")
-                {
-
-                }
+            if (label === "Home") {
+                return (
+                    <li className={"nav-item " + active}>
+                        <NavLink to={to} className='nav-link'>{label}</NavLink>
+                        <span className="sr-only">(current)</span>
+                    </li>
+                )
+            }
             return (
                 <li className={"nav-item " + active}>
                     <NavLink to={to} className='nav-link'>{label}</NavLink>
@@ -43,7 +51,7 @@ const NavItems = (pros) => {
         return pros.data_toggle === 'dropdown' ? 'dropdown' : ''
 
     }
-    console.log(pros.className)
+
     return (
         <li className={"nav-item " + pros.className}  >
             <NavLink className={"nav-link "}
@@ -70,83 +78,78 @@ const DropDownMenu = (pros) => {
         </div>
     )
 }
-class NavItem extends Component {
-    render() {
-        return (
-            <ul className="navbar-nav w-100">
-                {/* <MenuLink label="About" to="/" activeOnlyWhenExact={true}>
-                    
-                </MenuLink> */}
-                <li className="nav-item @@home__active active" >
-                    <NavLink className="nav-link" to="/#" exact >Home <span className="sr-only">(current)</span></NavLink>
-                </li>
-                {/* <MenuLink label="About" to="/about" activeOnlyWhenExact={false}>
-                </MenuLink> */}
-                <li className="nav-item @@about__active">
-                <NavLink className="nav-link" to="/about">About</NavLink>
+const NavItem = () => {
+
+    let context = useContext(contexts)
+    let {authorization } = context
+    const headerUser = ()=>{
+        console.log(authorization)
+        if(authorization)
+            return(
+                <>
+                    {/* <MenuLink label="Profile" to="/profile" activeOnlyWhenExact={false}>
+                    </MenuLink>
+                    <MenuLink label="ChatRoom" to="/chat" activeOnlyWhenExact={false}>
+                    </MenuLink> */}
+                    <ProfileMenu></ProfileMenu>
+                    <ShowMessage></ShowMessage>
+                </>
+                
+            )
+        else
+            return(
+                    <MenuLink label="Login" to="/login" activeOnlyWhenExact={false}>
+                    </MenuLink>
+            )
+        
+    }
+  
+    
+
+    return (
+        <ul className="navbar-nav w-100">
+            {/* { this.showMenu(menus)} */}
+            <MenuLink label="Home" to="/" activeOnlyWhenExact={true}>
+            </MenuLink>
+
+            <MenuLink label="About" to="/about" activeOnlyWhenExact={false}>
+            </MenuLink>
+
+
+            <MenuLinkS label="Pages" to="/pages" className='dropdown' data_toggle='dropdown' activeOnlyWhenExact={false}>
+                <DropDownMenu className=''>
+                    <NavLink className="dropdown-item " to="/pages/causes">Causes</NavLink>
+                    <NavLink className="dropdown-item " to="/pages/donate">Donate Now</NavLink>
+                </DropDownMenu>
+            </MenuLinkS>
+
+            <MenuLinkS label="Blog" to="#" className='dropdown' data_toggle='dropdown' activeOnlyWhenExact={false}>
+                <DropDownMenu className=''>
+                    <NavLink className="dropdown-item " to="/blog_posts">Blog posts</NavLink>
+                    <NavLink className="dropdown-item " to="/blog_single">Blog single</NavLink>
+                </DropDownMenu>
+            </MenuLinkS>
+
+            <MenuLink label="Contact" to="/contact" activeOnlyWhenExact={false}>
+            </MenuLink>
+            {console.log(authorization)}
+           
+
+           
+
+            <li className="ml-lg-auto mr-lg-0 m-auto">
+                {/* <!--/search-right--> */}
+                <SearchRight></SearchRight>
+
             </li>
 
-                {/* <MenuLinkS label="test" to="/test" className='dropdown' data_toggle='dropdown' activeOnlyWhenExact={true}>
+            <Donate></Donate>
+            
+            {headerUser()}
+            
+        </ul>
+    )
 
-                    <DropDownMenu className=''>
-                        <NavLink className="dropdown-item " to="/test/causes">Causes</NavLink>
-                        <NavLink className="dropdown-item " to="/donate">Donate Now</NavLink>
-                    </DropDownMenu>
-                </MenuLinkS> */}
-
-
-                {/* <NavItems classname="dropdown">
-                    <NavLink className="nav-link"
-                        to="/"
-                        exact
-                        role="button"
-                        data-toggle="dropdown"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                    >
-                        Menutest
-                        <span className="fa fa-angle-down"></span>
-                    </NavLink>
-                    <DropDownMenu>
-                        <NavLink className="dropdown-item " to="/causes">Causes</NavLink>
-                        <NavLink className="dropdown-item " to="/donate">Donate Now</NavLink>
-                    </DropDownMenu>
-                </NavItems> */}
-
-
-                <li className="nav-item dropdown @@pages__active">
-                    <NavLink className="nav-link dropdown-toggle" to="/" id="navbarDropdown11" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Pages<span className="fa fa-angle-down"></span>
-                    </NavLink>
-                    <div className="dropdown-menu" aria-labelledby="navbarDropdown1">
-                        <NavLink className="dropdown-item @@causes__active" to="/causes">Causes</NavLink>
-                        <NavLink className="dropdown-item @@donate__active" to="/donate">Donate Now</NavLink>
-                        <NavLink className="dropdown-item @@error__active" to="/error">404 Error page</NavLink>
-                        <NavLink className="dropdown-item" to="/landing-single">Landing page</NavLink>
-                    </div>
-                </li>
-                <li className="nav-item dropdown active">
-                    <NavLink className="nav-link dropdown-toggle" to="/" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Blog<span className="fa fa-angle-down"></span>
-                    </NavLink>
-                    <div className="dropdown-menu" aria-labelledby="navbarDropdown1">
-                        <NavLink className="dropdown-item @@b__active" to="/blog">Blog posts</NavLink>
-                        <NavLink className="dropdown-item active" to="/blog-single">Blog single</NavLink>
-                    </div>
-                </li>
-                <li className="nav-item @@contact__active">
-                    <NavLink className="nav-link" to="/contact">Contact</NavLink>
-                </li>
-                <li className="ml-lg-auto mr-lg-0 m-auto">
-                    {/* <!--/search-right--> */}
-                    <SearchRight></SearchRight>
-
-                </li>
-
-                <Donate></Donate>
-            </ul>
-        )
-    }
 }
 
 export default NavItem;

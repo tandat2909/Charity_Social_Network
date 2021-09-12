@@ -1,0 +1,130 @@
+.ftco-section{
+  padding: 7em 0;
+}
+.form-group-login{
+  
+    margin-bottom: 1rem; 
+}
+.row_login{
+
+}
+.form-control-login {
+  background: transparent;
+  border: none;
+  height: 50px;
+  color: white !important;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 40px;
+  padding-left: 20px;
+  padding-right: 20px;
+  -webkit-transition: 0.3s;
+  -o-transition: 0.3s;
+  transition: 0.3s; }
+input.form-control-login{
+  width: 90%;
+}
+.field-icon {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  -webkit-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+  color: rgba(255,255,255,.9);
+}
+
+element.style {
+}
+.field-icon {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+    color: rgba(255,255,255,.9);
+}
+.fa-fw {
+    width: 1.28571429em;
+    text-align: center;
+}
+.form-group-login {
+  position: relative; }
+  .checkbox-wrap-login {
+    display: block;
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none; 
+}
+.checkbox-wrap-login input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0; 
+}
+
+.checkmark-login {
+  position: absolute;
+  top: 0;
+  left: 0; 
+      }
+
+.checkmark-login:after {
+  content: "\f0c8";
+  font-family: "FontAwesome";
+  position: absolute;
+  color: rgba(255, 255, 255, 0.1);
+  font-size: 20px;
+  margin-top: -4px;
+  -webkit-transition: 0.3s;
+  -o-transition: 0.3s;
+  transition: 0.3s; }
+  @media (prefers-reduced-motion: reduce) {
+    .checkmark-login:after {
+      -webkit-transition: none;
+      -o-transition: none;
+      transition: none; } 
+}
+.checkbox-wrap-login input:checked ~ .checkmark-login:after {
+  display: block;
+  content: "\f14a";
+  font-family: "FontAwesome";
+  color: rgba(0, 0, 0, 0.2); }
+
+
+  .checkbox-primary-login {
+    color: #eff308; }
+    .checkbox-primary-login input:checked ~ .checkmark-login:after {
+      color: #eff308; }
+
+.login-wrap {
+  position: relative;
+  color: rgba(255, 255, 255, 0.9); }
+  .login-wrap h3 {
+    font-weight: 300;
+    color: #fff; }
+  .login-wrap .social {
+    width: 100%; }
+    .login-wrap .social a {
+      width: 100%;
+      display: block;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #000;
+      background: #fff; }
+      .login-wrap .social a:hover {
+        background: #000;
+        color: #fff;
+        border-color: #000; }
+
+        .heading-section {
+          font-size: 40px;
+          color: #fff; }

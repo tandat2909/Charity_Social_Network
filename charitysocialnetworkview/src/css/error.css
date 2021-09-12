@@ -1,0 +1,13 @@
+.text-center {
+    text-align: center !important;
+}
+.w3l-error .error-grid {
+    max-width: 650px;
+    margin: auto;
+}
+.w3l-error h1.error-title {
+    font-size: 150px;
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 15px;
+}
