@@ -185,11 +185,11 @@ NOTIFICATION_MESSAGE = {
 
 }
 
-DROPBOX_SETTING = {
-    "app_key": configLocal.dropbox.get("app_key"),
-    "app_secret": configLocal.dropbox.get("app_secret"),
-    "access_token": configLocal.dropbox.get("access_token")
-}
+# DROPBOX_SETTING = {
+#     "app_key": configLocal.dropbox.get("app_key"),
+#     "app_secret": configLocal.dropbox.get("app_secret"),
+#     "access_token": configLocal.dropbox.get("access_token")
+# }
 
 CLOUDINARY = {
     'cloud_name': 'charitycdn',

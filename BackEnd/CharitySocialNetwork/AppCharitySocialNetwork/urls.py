@@ -12,6 +12,7 @@ router.register(r'comment', views.CommentViewSet)
 router.register(r'historyauction', views.HistoryAuctionViewSet)
 router.register(r'emotions', views.EmotionTypeViewSet)
 router.register(r'auction',views.AuctionViewSet)
+router.register(r'statistical',views.StatisticalViewSet)
 # from .admin import customAdminSite
 urlpatterns = [
     path('', views.Index.as_view()),
