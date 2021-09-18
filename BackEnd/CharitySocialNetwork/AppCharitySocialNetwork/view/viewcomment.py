@@ -1,5 +1,4 @@
-
-from rest_framework import permissions, status,exceptions
+from rest_framework import permissions, status, exceptions
 from rest_framework.decorators import action
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.mixins import DestroyModelMixin
@@ -13,7 +12,7 @@ from ..view.baseview import BaseViewAPI
 from ..view.emotionview import EmotionViewBase
 
 
-class CommentViewSet(DestroyModelMixin, RetrieveUpdateAPIView, BaseViewAPI, EmotionViewBase, GenericViewSet):
+class CommentViewSet(DestroyModelMixin, RetrieveUpdateAPIView, EmotionViewBase, GenericViewSet, BaseViewAPI):
     queryset = Comment.objects.filter(active=True)
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated, ]
@@ -45,19 +44,18 @@ class CommentViewSet(DestroyModelMixin, RetrieveUpdateAPIView, BaseViewAPI, Emot
 
     def destroy(self, request, *args, **kwargs):
         if self.is_instance_of_user(request):
-            return self.delete_custom(request, request)
-        raise permissions.exceptions.PermissionDenied()
+            return self.delete_custom(request, self.get_object())
+        return Response(status=status.HTTP_403_FORBIDDEN)
 
     @action(methods=["PATCH"], detail=True, url_path="emotions")
     def create_or_update_or_delete_emotion_comment(self, request, pk, **kwargs):
         if request.query_params.get("action", '').__eq__('delete'):
             ins = EmotionComment.objects.get(author_id=request.user.id, comment_id=self.get_object().id).delete()
-
             return Response(status=status.HTTP_204_NO_CONTENT)
         data = {
-            'author_id': request.user.id or None,
+            'user_id': request.user.id or None,
             'comment_id': self.get_object().id or None,
-            'emotion_type_id': request.query_params.get("emotion_type", None),
+            'type_id': request.query_params.get("emotion_type", None),
         }
         try:
             instance_emotion = self.create_or_update_emotion(data, EmotionComment)

@@ -18,7 +18,6 @@ from ..view.baseview import BaseViewAPI
 
 class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
     queryset = User.objects.exclude(Q(is_superuser=True) | Q(is_active=False))
-
     list_action_upload_file = ["create", 'create_report']
 
     def get_serializer_class(self):
@@ -63,12 +62,10 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
 
     @action(methods=["PATCH"], detail=False, url_path='change_password', name="change_password")
     def change_password(self, request, **kwargs):
-
         serializer = UserChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.update(request.user, request.data)
         logout(request)
-
         request.auth.revoke()
         return Response(data={'success': 'Change password success'}, status=status.HTTP_200_OK)
 
@@ -101,8 +98,17 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
         request.user.email_user(subject="[Charity Social Network][Report]",
                                 message=instance.__str__()
                                         + "\n Cảm ơn bạn đã Report chúng tôi sẽ xem xét và gửi thông báo cho bạn sớm nhất")
+
+        # todo lấy user admin ra thông báo cho tất cả admin không được performance
+        instance_user_admin = User.objects.filter(Q(is_superuser=True) & Q(is_active=True))
+        message = 'Người dùng {name} đã report \n{content}'.format(name=request.user.get_full_name(),
+                                                                    content=instance.__str__())
+        for user in instance_user_admin:
+            self.add_notification(title='Report User', message=instance.__str__(), user=user)
+            user.email_user(subject="[Charity Social Network][Report][User]", message=message)
+
         return Response(ReportUserSerializer(instance, context={"request": request}).data,
-                        status=status.HTTP_200_OK)
+                        status=status.HTTP_201_CREATED)
 
     @action(methods=["GET", 'DELETE', 'PATCH'], detail=False)
     def notification(self, request, **kwargs):
@@ -112,11 +118,11 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
                 + Delete: dùng để xóa thông báo
                 + Get: lấy tất cả thông báo
             Param:
-                + id: action patch,delete cần gắn tham số này trên url để định danh một instance thông báo
+                + id: action patch,delete cần gắn tham số này trên url để định danh một đối tượng thông báo
 
         """
         if request.method == "GET":
-            queryset = request.user.notifications.filter(active=True).order_by("-created_date", "-new")
+            queryset = request.user.notifications.filter(active=True)
 
             self.pagination_class = NotificationPagePagination
             page = self.paginate_queryset(queryset)
@@ -151,4 +157,5 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
                 usermod: giá trị kiểu bool. Nếu usermod = True là user hiện tại là usermod và ngược lại không phải user mod
         '''
         per = PermissionUserMod()
+
         return Response({"usermod": per.has_permission(request, self)}, status=status.HTTP_200_OK)

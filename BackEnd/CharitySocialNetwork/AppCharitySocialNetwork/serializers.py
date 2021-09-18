@@ -1,12 +1,15 @@
+import django.conf
 import rest_framework.exceptions
 from cloudinary import CloudinaryResource, models as cloudmodels
 from cloudinary.forms import CloudinaryJsFileField, CloudinaryUnsignedJsFileField
 from django.conf import settings
+from graphene_django import DjangoObjectType
 from rest_framework import serializers
 from rest_framework.serializers import *
 from django.contrib.auth.models import Group, Permission
 from .models import *
 from .validators import PasswordValidator
+from oauth2_provider.models import Grant
 
 
 class BaseMeta:
@@ -27,7 +30,6 @@ class BaseMeta:
     extra_kwargs = {}
 
 
-# User
 class PermissionSerializer(ModelSerializer):
     class Meta:
         model = Permission
@@ -76,8 +78,9 @@ class UserRegisterSerializer(ModelSerializer):
 
     class Meta(BaseMeta):
         model = User
-        fields = None
-        exclude = ['is_superuser', 'is_staff', 'last_login', 'is_active', 'groups', 'user_permissions', 'notifications']
+        fields = ["id", "username", "password", "first_name", "last_name", "nick_name", 'phone_number', 'address',
+                  'avatar', "gender", "birthday"]
+        # exclude = ['is_superuser', 'is_staff', 'last_login', 'is_active', 'groups', 'user_permissions', 'notification_users']
         read_only_fields = ["date_joined", 'id']
         extra_kwargs = {
             'password': {
@@ -154,7 +157,8 @@ class EmotionTypeSerializer(ModelSerializer):
 class EmotionStatisticalSerializer(EmotionTypeSerializer):
     amount = IntegerField(default=0)
 
-    class Meta(EmotionTypeSerializer.Meta):
+    class Meta:
+        model = EmotionTypeSerializer.Meta.model
         fields = EmotionTypeSerializer.Meta.fields + ['amount', ]
         extra_kwargs = {
             'amount': {"read_only": True},
@@ -162,7 +166,7 @@ class EmotionStatisticalSerializer(EmotionTypeSerializer):
 
 
 class EmotionCommentSerializer(ModelSerializer):
-    author = UserViewModelSerializer()
+    user = UserViewModelSerializer()
 
     class Meta(BaseMeta):
         model = EmotionComment
@@ -173,7 +177,7 @@ class EmotionCommentSerializer(ModelSerializer):
 
 
 class EmotionPostSerializer(ModelSerializer):
-    author = UserViewModelSerializer()
+    user = UserViewModelSerializer()
 
     class Meta(BaseMeta):
         model = EmotionPost
@@ -235,13 +239,13 @@ class PostSerializer(ModelSerializer):
     user = UserViewModelSerializer()
     category = CategoryPostSerializer()
     hashtag = HashtagsSerializer(many=True)
-    info_auction = AuctionItemViewSerializer(many=True)
+    info_auction = AuctionItemViewSerializer()
     image = ImageField()
 
     class Meta(BaseMeta):
         model = NewsPost
         fields = None
-        exclude = ["reports"]
+        exclude = []
         extra_kwargs = {
             'active': {'write_only': True},
             'is_show': {'write_only': True},
@@ -272,7 +276,7 @@ class HistoryAuctionCreateSerializer(ModelSerializer):
 class PostListSerializer(PostSerializer):
     class Meta(PostSerializer.Meta):
         model = NewsPost
-        exclude = ["comments", "active", "is_show"] + PostSerializer.Meta.exclude
+        exclude = ["active", "is_show"] + PostSerializer.Meta.exclude
 
 
 class PostDetailSerializer(PostSerializer):
@@ -280,7 +284,7 @@ class PostDetailSerializer(PostSerializer):
 
     class Meta(PostSerializer.Meta):
         extra_kwargs = {**PostSerializer.Meta.extra_kwargs,
-                        "history_auction": {"read_only": True}
+                        "historyauction": {"read_only": True}
                         }
 
 
@@ -409,30 +413,33 @@ class PostChangeFieldIsShow(ModelSerializer):
 
 class CommentChildSerializer(ModelSerializer):
     user = UserViewModelSerializer()
-    emotions = EmotionCommentSerializer(many=True)
+    emotions_comment = EmotionCommentSerializer(many=True)
+    image = ImageField()
 
     class Meta:
         model = Comment
-        exclude = ['active', ]
+        fields = ["id", "user", "content", "image", "created_date", "update_date", "post", "comment_parent",
+                  "emotions_comment", "comment_child"]
 
 
 class CommentSerializer(ModelSerializer):
     user = UserViewModelSerializer()
     comment_child = CommentChildSerializer(many=True)
-    emotions = EmotionCommentSerializer(many=True)
+    emotions_comment = EmotionCommentSerializer(many=True)
+    image = ImageField()
 
     class Meta:
         model = Comment
         exclude = ['active', ]
-        extra_kwargs = {
-            'comment_child': {"write_only": True}
-        }
+        # extra_kwargs = {
+        #     'comment_child': {"write_only": True}
+        # }
 
 
 class CommentCreateSerializer(ModelSerializer):
     class Meta:
         model = Comment
-        fields = ['id', 'content']
+        fields = ['id', 'content', "comment_parent"]
         read_only_fields = ['id', ]
 
     # def create(self, validated_data, **kwargs):
@@ -453,6 +460,8 @@ class OptionReportSerializer(ModelSerializer):
 class ReportPostSerializer(ModelSerializer):
     class Meta(BaseMeta):
         model = ReportPost
+        fields = None
+        exclude = ["active","user",]
 
 
 class ReportPostCreateSerializer(ModelSerializer):
@@ -470,6 +479,8 @@ class ReportPostCreateSerializer(ModelSerializer):
 class ReportUserSerializer(ModelSerializer):
     class Meta(BaseMeta):
         model = ReportUser
+        fields = None
+        exclude = ["active", "user"]
 
 
 class ReportUserCreateSerializer(ModelSerializer):
@@ -487,10 +498,22 @@ class ReportUserCreateSerializer(ModelSerializer):
 class NotificationSerializer(ModelSerializer):
     class Meta(BaseMeta):
         model = Notification
+        fields = None
+        exclude = ["active", "user"]
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["type"] = django.conf.settings.TYPE_NOTIFICATION[rep.get("type")][1] or None
+        # print(instance.__dict__)
+        # if instance is not None:
+        #     rep["new"] = instance.users.new
+        #     rep["created_date"] = instance.users.created_date
+        return rep
 
 
 class PostImageSerializer(ModelSerializer):
     image = ImageField()
+
     class Meta:
         model = NewsPost
         fields = ["id", "image"]

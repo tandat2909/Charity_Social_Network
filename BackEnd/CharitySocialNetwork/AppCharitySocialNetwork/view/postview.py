@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import cloudinary
 import rest_framework
+from MySQLdb import IntegrityError
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db.models import Q
@@ -18,12 +19,13 @@ from rest_framework.mixins import ListModelMixin
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser, OR
 from rest_framework.response import Response
+from rest_framework.serializers import Serializer
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from ..filters import DjangoFilterBackendCustom
 from ..models import NewsPost, AuctionItem, HistoryAuction, Comment, \
     EmotionPost, EmotionType, NewsCategory, User, Hashtag
-from ..paginators import PostPagePagination, CommentPagePagination
+from ..paginators import PostPagePagination, CommentPagePagination, ImagePagePagination
 from ..permission import PermissionUserMod
 from ..serializers import PostListSerializer, EmotionPostSerializer, \
     PostCreateSerializer, PostChangeFieldIsShow, CommentSerializer, CommentCreateSerializer, ReportPostCreateSerializer, \
@@ -67,17 +69,23 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
     # permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        if self.action in ["create_comment", "get_comment", "list"]:
+            return self.queryset.filter(is_show=True)
+        return self.queryset
+
     def get_permissions(self):
-        if self.action in ['list', 'get_comments', 'get_emotion_post', 'retrieve', 'category',"get_all_image_post_user"]:
+        if self.action in ['list', 'get_comments', 'get_emotion_post', 'retrieve', 'category',
+                           "get_all_image_post_user"]:
             return [permissions.AllowAny(), ]
         if self.action in ["is_post_allowed", "get_list_pending_post"]:
             return [OR(PermissionUserMod(), IsAdminUser()), ]
         return [permissions.IsAuthenticated(), ]
 
     def get_serializer_class(self):
-        # if self.action in ["retrieve", ]:
-        #     return PostDetailSerializer
-        if self.action in ['list', ]:
+        if self.action in ["retrieve", ]:
+            return PostDetailSerializer
+        if self.action in ['list', 'get_post_by_user']:
             return PostListSerializer
         if self.action in ['category']:
             return CategoryPostSerializer
@@ -100,16 +108,13 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
 
+        if self.is_instance_of_user(request, self.get_object()) or request.user.is_superuser:
+            return Response(self.get_serializer(self.get_object(), context={"request": request}).data,
+                            status=status.HTTP_200_OK)
         if not self.get_object().is_show:
             raise rest_framework.exceptions.NotFound()
-
-        if self.is_instance_of_user(request, self.get_object()):
-            return Response(PostDetailSerializer(self.get_object(), context={"request": request}).data,
-                            status=status.HTTP_200_OK)
-
         data = self.get_serializer(self.get_object()).data.copy()
         data["historyauction"] = []
-
         try:
             if request.user.is_authenticated and AuctionItem.objects.filter(post=self.get_object().id).exists():
                 instance_history_auction_of_user_current = HistoryAuction.objects.get(user=request.user.id,
@@ -163,7 +168,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         </pre>
         """
         # print(request.query_params)
-        queryset = self.filter_queryset(self.get_queryset().filter(is_show=True))
+        queryset = self.get_queryset()
         # print(queryset.query)
         self.pagination_class = PostPagePagination
         page = self.paginate_queryset(queryset)
@@ -190,19 +195,18 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         '''
 
         serializer = self.get_serializer(data=request.data)
-
-        serializer.is_valid(raise_exception=True)
+        serializer.is_valid(raise_exception=False)
         # print(request.data,type(request.data.getlist("hashtag",None)))
-
         try:
             hashtag = request.data.getlist("hashtag", None)
         except:
             hashtag = request.data.get("hashtag", None)
-        instance = serializer.save(**{"user": request.user, 'hashtag': hashtag})
 
+        instance = serializer.save(**{"user": request.user, 'hashtag': hashtag})
         self.add_notification(**settings.NOTIFICATION_MESSAGE.get("add_post"))
 
-        return Response(PostSerializer(instance, context={"request": request}).data, status=status.HTTP_201_CREATED)
+        return Response(PostSerializer(instance, context={"request": request}).data,
+                        status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
         if self.is_instance_of_user(request, self.get_object()):
@@ -259,7 +263,6 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                     - browser = 1 : filter lấy tất cả bài viết được duyệt
                     - browser = 0 : filter lấy tất cả bài viết chưa duyệt
 
-
         '''
         browser = request.query_params.get("browser", None)
         queryset = self.filter_queryset(self.get_queryset().filter(user=request.user.id))
@@ -301,7 +304,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         try:
             # comment_parent = request.query_params.get("comment", None)
             # lấy tất cả comment không có comment_parent
-            queryset = self.get_object().comments.filter(active=True)
+            queryset = self.get_object().comment_set.filter(active=True, comment_parent=None)
             self.pagination_class = CommentPagePagination
             page = self.paginate_queryset(queryset)
             if page is not None:
@@ -324,27 +327,23 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             <b>Require</b>
                 + Yêu cầu đăng nhập
                 + content
+            API v2:
+                thay đổi url
         """
 
-        comment_parent = request.data.get("comment_parent", None)
-        serializer_comment = CommentCreateSerializer(data={"content": request.data.get("content", None)})
+        serializer_comment = CommentCreateSerializer(data={**request.data})
         serializer_comment.is_valid(raise_exception=True)
-        instance_comment = serializer_comment.save(**{"user": request.user})
+        instance_comment = serializer_comment.save(**{"user": request.user, "post": self.get_object()})
         try:
-
-            if comment_parent:
-                instance_comment_parent = Comment.objects.get(id=comment_parent)
-                instance_comment_parent.comment_child.add(instance_comment)
-                instance_comment_parent.save()
-                # thông báo cho chủ bài viết
+            if request.data.get("comment_parent", None) is not None:
+                # print(self.get_object().user)
+                # thông báo chủ chủ comment parent có comment mới
                 self.add_notification(title="Bình luận mới",
-                                      user=instance_comment_parent.user,
+                                      user=instance_comment.comment_parent.user,
                                       message=request.user.get_full_name() +
                                               " đã phản hồi bình luận của bạn về bài viết của " +
                                               self.get_object().user.get_full_name())
-            else:
-                self.get_object().comments.add(instance_comment)
-                self.get_object().save()
+
             # kiểm tra bài viết hiện tại có phải của user đang bình luận nếu phải sẽ không add thông báo
             if not self.is_instance_of_user(request, self.get_object()):
                 self.add_notification(title="Bình luận mới",
@@ -362,7 +361,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     def get_emotion_post(self, request, pk, **kwargs):
         post_id = self.get_object().id
         serializer_statistical = self.get_serializer_statistical_emotion_post(post_id)
-        serializer_emotion_post = self.get_serializer_detail_emotions_post(post_id)
+        serializer_emotion_post = self.get_serializer_detail_emotions_post()
         return Response(data={
             'statistical': serializer_statistical.data,
             'data': serializer_emotion_post.data
@@ -388,20 +387,20 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         </pre>
         """
         if request.query_params.get("action", '').__eq__('delete'):
-            EmotionPost.objects.get(author_id=request.user.id, post_id=self.get_object().id).delete()
+            EmotionPost.objects.get(user_id=request.user.id, post_id=self.get_object().id).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         data = {
-            'author_id': request.user.id or None,
+            'user_id': request.user.id or None,
             'post_id': self.get_object().id or None,
-            'emotion_type_id': request.query_params.get("emotion_type", None),
+            'type_id': request.query_params.get("emotion_type", None),
         }
         try:
 
             instance_emotion = self.create_or_update_emotion(data, EmotionPost)
             self.add_notification(title="",
                                   message=(self.request.user.get_full_name() or self.request.user.username) +
-                                          " " + instance_emotion.emotion_type.name + ' bài viết " ' + self.get_object().title + ' " của bạn"',
+                                          " " + instance_emotion.type.name + ' bài viết " ' + self.get_object().title + ' " của bạn"',
                                   user=self.get_object().user
                                   )
             return Response(data=EmotionPostSerializer(instance_emotion, context={"request": request}).data,
@@ -412,7 +411,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     # end emtion
 
     # Report
-    @action(methods=["POST"], detail=True, url_path="report")
+    @action(methods=["POST", ], detail=True, url_path="report")
     def create_report(self, request, pk, **kwargs):
         """
             + Chức năng:
@@ -433,15 +432,18 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                                                           Q(user_permissions__codename__contains='mod')
                                                   )
                                                   & Q(is_active=True))
-
+        message = 'Người dùng {name} đã report \n{content}'.format(name=self.request.user.get_full_name(),
+                                                                   content=instance.__str__())
         for user in instance_user_admin:
             self.add_notification(title='Report', message="Bài viết " + self.get_object().title, user=user)
+            user.email_user(subject="[Charity Social Network][Report][News Post]", message=message)
 
         request.user.email_user(subject="[Charity Social Network][Report]",
                                 message=instance.__str__()
                                         + "\n Cảm ơn bạn đã Report chúng tôi sẽ xem xét "
                                           "và gửi thông báo cho bạn sớm nhất")
-        return Response(ReportPostSerializer(instance, context={"request": request}).data, status=status.HTTP_200_OK)
+        return Response(ReportPostSerializer(instance,context={"request": request}).data,
+                        status=status.HTTP_201_CREATED)
 
     @action(methods=["PATCH"], detail=True)
     def set_auctioneer_winning(self, request, pk, **kwargs):
@@ -518,7 +520,6 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                 # print(hash_tag_id, pk, kwargs)
                 instance_post = self.get_object()
                 instance_post.hashtag.get(pk=hash_tag_id).delete()
-
                 return Response(status=status.HTTP_204_NO_CONTENT)
             raise rest_framework.exceptions.PermissionDenied()
         except ValueError as ex:
@@ -535,6 +536,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     @action(methods=["POST"], detail=False, url_path="ckeditor/upload")
     def ckeditor_upload(self, request, **kwargs):
         try:
+            self.get_queryset()
             uploaded_file = request.FILES["upload"]
             file = cloudinary.uploader.upload(uploaded_file)
             # print("sssssss",file.get("secure_url",None))
@@ -547,21 +549,12 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
 
     @action(methods=["GET"], detail=False, url_path="get-all-image-post-user/(?P<user_id>[0-9]+)")
     def get_all_image_post_user(self, request, user_id, **kwargs):
-        number = request.query_params.get("amount", None)
-        try:
-            number = int(number)
-            if number <= 0:
-                return Response({"error":" tham số number phải lớn hơn 0"},status=status.HTTP_400_BAD_REQUEST)
-            if number > 50:
-                number = 50
-        except:
-            number = 30
+        """
+            Lấy tất cả hình ảnh theo người dùng mà bài viết đó được duyệt
 
-        query_set = self.get_queryset().filter(user=user_id, is_show=True).order_by("-created_date")
-
-        class PageSize(PageNumberPagination):
-            page_size = number
-
-        self.pagination_class = PageSize
-        return self.get_paginated_response(PostImageSerializer(self.paginate_queryset(query_set), many=True).data,)
-
+        """
+        query_set = self.get_queryset().filter(user=user_id, is_show=True, image__isnull=False).order_by(
+            "-created_date")
+        # print(query_set.query)
+        self.pagination_class = ImagePagePagination
+        return self.get_paginated_response(PostImageSerializer(self.paginate_queryset(query_set), many=True).data, )

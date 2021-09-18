@@ -168,12 +168,12 @@ class EmotionViewBase:
         :param post_id:
         :return:
         """
-        data = EmotionType.objects.all() \
+        data = EmotionType.objects \
             .filter(emotionpost__post=post_id, emotionpost__active=True) \
             .annotate(amount=Count('id'))
         return data
 
-    def detail_emotions_post(self, post_id, **kwargs):
+    def detail_emotions_post(self, post, **kwargs):
         """
         Lấy tất cả emotions post của bài viết theo id bài viết
 
@@ -181,8 +181,8 @@ class EmotionViewBase:
         :return: QuerySet<[<EmotionPost: Like>, <EmotionPost: Sad>]>
         """
 
-        instances = EmotionPost.objects.filter(active=True, post=post_id)
-        return instances
+        instances = post or self.get_object()
+        return instances.emotionpost_set.filter(active=True)
 
     def get_serializer_statistical_emotion_post(self, post_id, **kwargs):
         request = kwargs.get("request", None)
@@ -190,7 +190,7 @@ class EmotionViewBase:
             'request': request or self.request
         })
 
-    def get_serializer_detail_emotions_post(self, post_id, **kwargs):
+    def get_serializer_detail_emotions_post(self, post=None, **kwargs):
         """
         Trả về đối tượng EmotionPostSerializer
         :param post_id:
@@ -198,7 +198,7 @@ class EmotionViewBase:
         :return:
         """
 
-        return EmotionPostSerializer(self.detail_emotions_post(post_id, **kwargs), many=True,
+        return EmotionPostSerializer(self.detail_emotions_post(post, **kwargs), many=True,
                                      context={"request": self.request})
 
     def create_or_update_emotion(self, data, models, **kwargs):
@@ -209,15 +209,14 @@ class EmotionViewBase:
         :param kwargs:
         :return:
         '''
-        emotion_type = data.pop("emotion_type_id")
+        emotion_type = data.pop("type_id")
         assert EmotionType.objects.get(id=emotion_type)
-        instance = None
+
         try:
             instance = models.objects.get(**data)
-            instance.emotion_type_id = emotion_type
+            instance.type_id = emotion_type
             instance.save()
         except models.DoesNotExist:
-            instance = models.objects.create(**data, emotion_type_id=emotion_type)
-            self.get_object().emotions.add(instance)
+            instance = models.objects.create(**data, type_id=emotion_type)
 
         return instance

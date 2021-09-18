@@ -8,12 +8,15 @@ from ckeditor_uploader.backends import registry
 from ckeditor_uploader.utils import storage
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, JsonResponse
 
 from django.shortcuts import render, redirect
 from django.utils.html import escape
 
 from django.views import View
+from graphene_django.views import GraphQLView
+from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 
 from oauth2_provider.models import Application
 from .view import *
@@ -46,7 +49,20 @@ class Login(View):
 
 def logouts(request):
     logout(request)
+
     return redirect("/accounts/login")
+
+# class LoginGraphql(LoginRequiredMixin,GraphQLView):
+#
+#     pass
+
+    # def dispatch(self, request, *args, **kwargs):
+    #     # request.user
+    #     header = self.authenticate_header(request)
+    #     # u, ac = self.authenticate(request)
+    #     # print(header, u, ac)
+    #     print("heaer",header,request.__dict__)
+    #     return super().dispatch(request, *args, **kwargs)
 
 #
 # class CKEditorUploadCloud(View):

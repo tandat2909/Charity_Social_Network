@@ -73,9 +73,7 @@ class EmotionViewBase:
         return instance
 
 
-
 class EmotionTypeViewSet(ListModelMixin, GenericViewSet):
     queryset = EmotionType.objects.filter(active=True)
     serializer_class = EmotionTypeSerializer
     pagination_class = None
-

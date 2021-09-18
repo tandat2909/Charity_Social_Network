@@ -26,7 +26,11 @@ SECRET_KEY = 'django-insecure-oh!&a-p-$tqc&l=mmb6gh8tf8h2ue%p4f&o2cjgkpj9bfqjh2-
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
+INTERNAL_IPS = [
+    # ...
+    '127.0.0.1',
+    # ...
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -46,10 +50,12 @@ INSTALLED_APPS = [
     'cloudinary',
     'ckeditor',
     'ckeditor_uploader',
-    'dropbox'
+    'graphene_django',
+    # 'debug_toolbar'
 ]
 
 MIDDLEWARE = [
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -57,7 +63,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware'
+    'corsheaders.middleware.CorsMiddleware',
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',,
+    'AppCharitySocialNetwork.middlewares.LoginByClientIdMiddleware',
+    'AppCharitySocialNetwork.middlewares.AuthorizationMiddleware',
+
 ]
 
 ROOT_URLCONF = 'CharitySocialNetwork.urls'
@@ -157,9 +167,28 @@ CORS_ORIGIN_ALLOW_ALL = True
 # CORS_ALLOWED_ORIGINS = ['http://dkmh.ou.edu.vn',]
 
 # Page number
+PAGE_SIZE_QUERY_PARAM = "page_size"
+
 POST_PAGE_SIZE = 30
+MAX_POST_PAGE_SIZE = 50
+
 COMMENT_PAGE_SIZE = 30
+MAX_COMMENT_PAGE_SIZE = 50
+
 NOTIFICATION_PAGE_SIZE = 30
+MAX_NOTIFICATION_PAGE_SIZE = 50
+
+IMAGE_PAGE_SIZE = 30
+MAX_IMAGE_PAGE_SIZE = 50
+
+# Notification
+TYPE_NOTIFICATION = [
+    (0, "Thông báo hệ thông"),
+    (1, "Thông báo người dùng"),
+    (2, "Thông báo bài viết mới"),
+    (3, "Thông báo có bài viết đấu giá"),
+    (4, "Report"),
+]
 
 NOTIFICATION_MESSAGE = {
     "add_post": {
@@ -221,3 +250,18 @@ CKEDITOR_UPLOAD_PATH = 'images/newspost/'
 # CKEDITOR_ALLOW_NONIMAGE_FILES = True
 
 CATEGORY_POST_AUCTION = 1
+
+# phần thêm của đồ án
+
+GRAPHENE = {
+    "SCHEMA": "AppCharitySocialNetwork.schema.schema",
+    'MIDDLEWARE': [
+        'graphene_django.debug.DjangoDebugMiddleware',
+        # 'AppCharitySocialNetwork.middlewares.AuthorizationMiddleware',
+        # 'oauth2_provider.contrib.rest_framework.OAuth2Authentication'
+    ],
+    'RELAY_CONNECTION_MAX_LIMIT': 100,  # chỉ định số đối tượng lấy được trong một lần request,
+    'CAMELCASE_ERRORS': False,  # tên field bị lỗi sẽ được chuyển thành chuẩn đặt tên CAMELCASE nếu được bặt lên True
+}
+
+

@@ -6,3 +6,4 @@ from .emotionview import EmotionTypeViewSet
 from .viewcomment import CommentViewSet
 from .auctionveiw import AuctionViewSet
 from .statisticalview import StatisticalViewSet
+from .categoryview import CategoryPostViewSet

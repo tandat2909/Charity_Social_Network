@@ -150,7 +150,6 @@ class CustomAdminSite(admin.AdminSite):
                 return JsonResponse({"error": "Tháng không hợp lệ"})
             if month == 0:
                 data = self.get_statistical_month_have_post_by_year(year)
-
             else:
                 data = self.get_statistical_day_have_post_by_month_year(year, month)
             print(data)
@@ -219,7 +218,7 @@ class EmotionTypeAdmin(BaseModelsAdmin):
 
 
 class EmotionAdmin(BaseModelsAdmin):
-    list_display = ["id", "author", "emotion_type"]
+    list_display = ["id", "user", "type"]
 
 
 class EmotionPOSTAdmin(EmotionAdmin):
@@ -286,11 +285,12 @@ class PostAdmin(BaseModelsAdmin):
         return post.user.get_full_name()
 
     def report(self, post):
-        amount = post.reports.all().count()
+        # print(post.__dict__)
+        amount = post.reportpost_set.all().count()
         return amount
 
     def emotion(self, post):
-        amount = post.emotions.all().count()
+        amount = post.emotionpost_set.all().count()
         return amount
 
     def images(self, post):
@@ -317,7 +317,7 @@ class CommentAdmin(BaseModelsAdmin):
     search_fields = ["content", "user__username", 'user__first_name', 'user__last_name']
 
     def amount_emotion(self, obj):
-        return obj.emotions.all().count()
+        return obj.emotions_comment.all().count()
 
     def amount_comment_child(self, obj):
         return obj.comment_child.all().count()
@@ -339,7 +339,7 @@ class CategoryPostAdmin(BaseModelsAdmin):
     list_display = ("id", "name", 'amount_post', 'description', 'created_date', 'active')
 
     def amount_post(self, cate):
-        return cate.post.all().count()
+        return cate.posts.all().count()
 
 
 class OptionReportAdmin(BaseModelsAdmin):
@@ -365,6 +365,7 @@ customAdminSite.register(Permission, PermissionAdmin)
 customAdminSite.register(
     [
         Transaction,
+        Notification,
     ])
 customAdminSite.register(EmotionPost, EmotionPOSTAdmin)
 customAdminSite.register(EmotionType, EmotionTypeAdmin)
@@ -378,3 +379,4 @@ customAdminSite.register(NewsCategory, CategoryPostAdmin)
 customAdminSite.register(OptionReport, OptionReportAdmin)
 customAdminSite.register(ReportPost, ReportPostAdmin)
 customAdminSite.register(ReportUser, ReportUserAdmin)
+

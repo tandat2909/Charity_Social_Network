@@ -24,7 +24,7 @@ class PermissionUserReport(IsAuthenticated, ):
             'AppCharitySocialNetwork.add_reportpost',
             'AppCharitySocialNetwork.change_reportpost',
             'AppCharitySocialNetwork.view_reportpost',
-            'AppCharitySocialNetwork.view_optionreportpost',
+            'AppCharitySocialNetwork.view_optionreport',
         ])
 
 
