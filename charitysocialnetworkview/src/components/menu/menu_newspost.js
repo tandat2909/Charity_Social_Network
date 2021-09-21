@@ -1,12 +1,9 @@
-import React, {useContext, useState} from 'react';
+import React, { useState} from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import BottomNavigation from '@material-ui/core/BottomNavigation';
 import BottomNavigationAction from '@material-ui/core/BottomNavigationAction';
 import {EventBusy, EventNote, Gavel, EventAvailable, BorderAll} from '@material-ui/icons';
-import {NewsPostContext} from '../../context/newspost'
-import callApi from '../../utils/apiCaller';
-import ListCard from '../profile/list_card';
-import dateFormat from 'dateformat';
+
 
 const useStyles = makeStyles({
   root: {
@@ -18,7 +15,7 @@ export default function MenuCategory(props) {
   const classes = useStyles();
   const [value, setValue] = useState(0);
 
-    let contextNewAll = useContext(NewsPostContext) 
+    
 
 
 

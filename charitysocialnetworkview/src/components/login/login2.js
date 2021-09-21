@@ -4,9 +4,10 @@ import axios from 'axios';
 import qs from 'qs';
 import { useHistory } from "react-router-dom";
 import {contexts} from '../../context/context'
-import callApi from '../../utils/apiCaller';
-import firebase, { auth} from '../firebase/config';
-import { Button } from '@material-ui/core';
+import firebase, { auth, db} from '../firebase/config';
+import {  Link } from 'react-router-dom';
+import { addDocument, generateKeywords } from '../firebase/services';
+
 
 
 const fbProvider = new firebase.auth.FacebookAuthProvider()
@@ -14,7 +15,9 @@ const fbProvider = new firebase.auth.FacebookAuthProvider()
 const Logins = (props) => {
 
    const context = useContext(contexts)
- 
+    let [pass, setPass] = useState(true)
+    // let [showRegister, setShowRegister] = useState(true)
+
 
     let [credentials, setcredentials] = useState({
         username:"",
@@ -26,8 +29,8 @@ const Logins = (props) => {
     let login = async event => {
         try{
             let payload = {
-                client_id: 'fMsSJ477u9nT7yy0ZUexLKyMTVcrOzBGXyKIX97C',
-                client_secret: '1avszJ6kjnWNQ4bDKtA3a5k4oN79cEnGKOuYwlVcHeZp2XwDoaYMLB6pPsh5rWtOXMf4EwlFwyBPkQiUtsg4AzqIgqoivB9G6NiWlDpIyJDUUam2DBDSLRfzH5Kvf97d',
+                client_id: 'd5MTFmvkDlLjkEzn5usfikCAhJ7p8gxx31ayMKvR',
+                client_secret: 'Dhg7i0Q4ItQ5ss8vwEjHoRyJfRovJP3FiNkDnZVLB1zOjFujYWwQiJYkfeguwaAf7C9dVzLKqv8YeERJkBajpVOula3bvIeMkM4NcWGFhidSvZ5024bURtGufuUQVF3B',
                 grant_type: 'password',
                 ...credentials,
             }      
@@ -79,15 +82,33 @@ const Logins = (props) => {
 
   
 
-    const handleFBLogin = () =>{
-        auth.signInWithPopup(fbProvider)
+    const handleFBLogin = async() =>{
+        const { additionalUserInfo, user } =  await auth.signInWithPopup(fbProvider)
+        if (additionalUserInfo?.isNewUser) {
+            addDocument('users',{
+                displayName: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+                uid: user.uid,
+                providerId: additionalUserInfo.providerId,
+                keywords: generateKeywords(user.displayName),
+            });
+          }
+
+    }
+    const changePass = () => {
+        if(pass === true){
+            setPass(false)
+        }
+        else
+            setPass(true)
     }
     
     return (
         <>
             
            
-            <div className="img js-fullheight" style={{ backgroundImage: 'url(images/banner1.jpg)' }}>
+            <div className="img js-fullheight" style={{ backgroundImage: 'url(images/banner1.jpg)', backgroundRepeat: "no-repeat" }}>
                 <section className="ftco-section">
                     <div className="container">
                         <div className="row justify-content-center">
@@ -95,6 +116,7 @@ const Logins = (props) => {
                                 <h2 className="heading-section">Save Poor</h2>
                             </div>
                         </div>
+                       
                         <div className="row justify-content-center">
                             <div className="col-md-6 col-lg-4" style={{ padding: "30px 15px", borderRadius: "5%", backgroundColor: "#191717ad" }}>
                                 <div className="login-wrap p-0">
@@ -103,15 +125,17 @@ const Logins = (props) => {
                                         <div className="form-group-login">
                                             <input type="text" className="form-control-login" placeholder="Username" required onChange={(e) => inputChanged(e)} name='username' />
                                         </div>
-                                        <div className="form-group-login">
-                                            <input id="password-field" type="password" className="form-control-login" placeholder="Password" onChange={(e) => inputChanged(e)} required name='password' />
-                                            <span toggle="#password-field" className="fa fa-fw fa-eye field-icon toggle-password"></span>
-                                        </div>
-                                        <div className="form-group-login">
-                                            <button type="submit" className="form-control-login btn-login btn-primary-login submit px-3"
-                                                style={{ backgroundColor: "orange", width: "100%" }} onClick={() => login()} >Sign In</button>
-                                        </div>
-                                        {/* <div className="form-group-login d-md-flex">
+                                        
+                                            <div className="form-group-login">
+                                                <input id="password-field" type={pass === true ? "password" : "text"} className="form-control-login" placeholder="Password" onChange={(e) => inputChanged(e)} required name='password' />
+                                                <span toggle="#password-field" className="fa fa-fw fa-eye field-icon toggle-password" onClick={changePass}></span>
+                                            </div>
+                                            <div className="form-group-login">
+                                                <button type="submit" className="form-control-login btn-login btn-primary-login submit px-3"
+                                                    style={{ backgroundColor: "orange", width: "100%" }} onClick={() => login()} >Sign In</button>
+                                            </div>
+                                        
+                                        <div className="form-group-login d-md-flex">
                                                 <div className="w-50">
                                                     <label className="checkbox-wrap-login checkbox-primary-login">Remember Me
                                                         <input type="checkbox" checked />
@@ -119,19 +143,20 @@ const Logins = (props) => {
                                                     </label>
                                                 </div>
                                                 <div className="w-50 text-md-right">
-                                                    <a className="login" href="#" style={{color: "#fff"}}>Forgot Password</a>
+                                                    <Link className="login" to="/register" style={{color: "#fff"}}>Register</Link>
                                                 </div>
-                                            </div> */}
+                                            </div>
                                     </div >
                                     <p className="w-100 text-center">&mdash; Or Sign In With &mdash;</p>
                                     <div className="social d-flex text-center">
-                                        <Button onClick={handleFBLogin}> Facebook</Button>
+                                        <a className="login" href="/#" className="px-2 py-2 ml-md-1 rounded" onClick={handleFBLogin}><span className="ion-logo-twitter mr-2"></span> Facebook</a>
                                         
                                         <a className="login" href="#/" className="px-2 py-2 ml-md-1 rounded"><span className="ion-logo-twitter mr-2"></span> Twitter</a>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                     
                     </div>
                 </section>
             </div>

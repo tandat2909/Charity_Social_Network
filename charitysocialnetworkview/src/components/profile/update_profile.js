@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext} from 'react';
 import {Button, TextField, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem} from '@material-ui/core';
 import {Create} from '@material-ui/icons';
 import { makeStyles } from "@material-ui/core/styles";
@@ -105,7 +105,7 @@ const UpdateProfile = (props) => {
                 color="default"
                 startIcon={<Create />}
                 style={{fontSize: 'small'}}
-                ghost
+                // ghost={true}
             >
                 Update
             </Button>

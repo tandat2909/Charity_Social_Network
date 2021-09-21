@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 // import Badge from "@material-ui/core/Badge";
-import MailIcon from "@material-ui/icons/Mail";
+import NotificationsActiveIcon from '@material-ui/icons/NotificationsActive';
 import { Menu, Dropdown, Badge, Card, Button } from "antd";
 import "antd/dist/antd.css";
 import { contexts } from '../../context/context'
@@ -19,7 +19,7 @@ export default function ShowMessage() {
 
 
   const Notification = (props = dataMess.dataNotification) => 
-    props.results && props.results.map((item) => {
+    props.results && props.results.map((item, index) => {
       return (
         <>
           <Menu.Item
@@ -39,7 +39,7 @@ export default function ShowMessage() {
                             WebkitBoxOrient: "vertical",
                             // width: "100%", 
                             display: "block", 
-                            display: "-webkit-box",
+                            // display: "-webkit-box",
                             height:"16px*1.3*3",
                             textAlign: "justify"}}  >
                   {item.message}
@@ -55,6 +55,10 @@ export default function ShowMessage() {
   
 
   const OpenDialog = (props) => {
+    let read ={new: false}
+    let url = 'api/accounts/notification/?id=' + props + ''
+    let b = callApi(url, 'PATCH', read, null)
+
     setOpen(true);
     // setMess(dataMess.dataNotification.results[props])
     for(let i = 0; i < dataMess.dataNotification.results.length; i++){
@@ -67,9 +71,9 @@ export default function ShowMessage() {
   };
 
   const CloseDialog = (props) => {
-    let read ={new: false}
-    let url = 'api/accounts/notification/?id=' + props + ''
-    let b = callApi(url, 'PATCH', read, null)
+    // let read ={new: false}
+    // let url = 'api/accounts/notification/?id=' + props + ''
+    // let b = callApi(url, 'PATCH', read, null)
     setOpen(false);
   };
 
@@ -78,7 +82,7 @@ export default function ShowMessage() {
     console.log(props)
     let url = 'api/accounts/notification/?id=' + props + ''
     let b = await callApi(url, 'DELETE', null, null).then(res => {
-      if (res.status === 200 || res.status === 201) {
+      if (res.status === 204) {
         alert("bạn đã xóa thông báo thành công")
         CloseDialog()
     }
@@ -86,7 +90,7 @@ export default function ShowMessage() {
   }
 
   const menu = (
-    <Menu style={{ width: "320px" }}>
+    <Menu style={{ width: "320px", height: "400px", overflowY: "scroll"}}>
       {Notification()}
     </Menu>
   );
@@ -95,7 +99,7 @@ export default function ShowMessage() {
     <div style={{ margin: "20px 10px" }}>
       <Dropdown overlay={menu} placement="bottomCenter" arrow>
         <Badge color="secondary" count={dataMess.dataNotification.count} overflowCount={1} showZero>
-          <MailIcon color="secondary" style={{ fontSize: 30, color: "blue" }} />
+          <NotificationsActiveIcon color="secondary" style={{ fontSize: 30, color: "blue" }} />
         </Badge>
       </Dropdown>
         

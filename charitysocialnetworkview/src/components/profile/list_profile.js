@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo, useEffect } from 'react';
+import React, { useContext} from 'react';
 import dateFormat from 'dateformat';
 import {
      List, ListItem, ListItemText, ListItemAvatar, Avatar, Divider
@@ -13,7 +13,7 @@ import { contexts } from "../../context/context"
 
 const ListProfile = (props) => {    
     const context = useContext(contexts)
-    let [data,setData] = useState("")
+    // let [data,setData] = useState("")
     // const [status, setStatus] = useState(context.dataProfile);
     let date = dateFormat(context.dataProfile.date_joined, "fullDate")
     // let setDataProfile = () =>{

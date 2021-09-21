@@ -27,7 +27,7 @@ const Form = () => {
 
     const postComment = async() => {
         if(context.authorization){
-            let post = {...comment}
+            // let post = {...comment}
             let url = 'api/newspost/' + detailPost.detail.id + '/comment/'
             let a = await callApi(url, 'POST', comment, null).then(res => {
                 if (res.status === 200 || res.status === 201) 

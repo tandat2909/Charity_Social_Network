@@ -1,22 +1,22 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { makeStyles } from "@material-ui/core/styles";
 import {
-    TextField, Typography, CardContent, CardMedia, Avatar, CardHeader, Card, IconButton, Paper
+    TextField, Typography, CardContent, CardMedia, Avatar, CardHeader, Card, IconButton, Menu, MenuItem
 }
     from "@material-ui/core";
 import {
-    MoreVert, Message, Share,ThumbUp
+    MoreVert, Message, Share, 
 }
     from '@material-ui/icons';
-import ListEmoji from './list_emoji'
+// import ListEmoji from './list_emoji'
 import { contexts } from "../../context/context"
-
-
+import callApi from '../../utils/apiCaller';
+import { Link } from 'react-router-dom';
 
 
 const useStylesCard = makeStyles((theme) => ({
-    
+
     media: {
         height: 0,
         paddingTop: '56.25%', // 16:9
@@ -41,12 +41,33 @@ const useStylesCard = makeStyles((theme) => ({
 const ListCard = (props) => {
     const classes = useStylesCard();
     const context = useContext(contexts)
-    const hh = ()=>{
-        let a= ""
-        props.hashTag.forEach(h =>{
-            a+= "#" + h.name +" "
+    const hh = () => {
+        let a = ""
+        props.hashTag.forEach(h => {
+            a += "#" + h.name + " "
         })
         return a
+    }
+
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [delete_post_sucess, setDeletePostSucess] = useState(false);
+    const handleClickOpenMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
+    setAnchorEl(null);
+    };
+
+    const deletePost = async(id) =>{
+        let url = 'api/newspost/' + id + '/'
+        let a = await callApi(url, 'DELETE', null, null).then(res => {
+            if (res.status === 204)
+                alert("bạn đã xóa bài viết thành công")
+        })
+        handleCloseMenu()
+        console.log("bài viết đã xóa: ", id)
+        setDeletePostSucess(true)
     }
     return (
         <>
@@ -56,14 +77,14 @@ const ListCard = (props) => {
                         <Avatar src={context.dataProfile.avatar} />
                     }
                     action={
-                        <IconButton aria-label="settings">
-                            <MoreVert />
+                        <IconButton aria-label="settings" >
+                            <MoreVert onClick={handleClickOpenMenu}/>
                         </IconButton>
                     }
                     title={`${context.dataProfile.first_name}` + " " + `${context.dataProfile.last_name}`}
                     subheader={props.dateCreate}
                 />
-                <h3>{hh()}</h3>
+                <h5>{hh()}</h5>
 
                 <CardMedia
                     className={classes.media}
@@ -76,14 +97,14 @@ const ListCard = (props) => {
                     borderRadius: "0px 0px 15px 15px",
                     borderTop: "none",
                 }}>
-                    <p style={{color: "black"}}>{props.title}</p>
+                    <p style={{ color: "black" }}>{props.title}</p>
                     <Typography variant="body2" color="textSecondary" component="p">
                         {props.description}
                     </Typography>
                 </CardContent>
-                
-                <CardContent style={{display: "flex", borderTop: "1px solid gray", borderBottom: "1px solid gray"}}>
-                        <ListEmoji ></ListEmoji>
+
+                <CardContent style={{ display: "flex", borderTop: "1px solid gray", borderBottom: "1px solid gray" }}>
+                    {/* <ListEmoji ></ListEmoji> */}
                     <IconButton aria-label="share">
                         <Share />Share
                     </IconButton>
@@ -93,24 +114,37 @@ const ListCard = (props) => {
                 </CardContent>
 
             </Card>
-        <div style={{display: "flex", alignItems: "center"}}>
-            <img src={context.dataProfile.avatar} alt=""
-            style={{ width: "50px", height: "50px", borderRadius: '50%', border: ' 5px solid white' }} />
-            <TextField
-                id="filled-full-width"
-                style={{ margin: 8 }}
-                placeholder="Comment"
-                label={`${context.dataProfile.first_name}` + " " + `${context.dataProfile.last_name}`}
-                helperText="thời gian comment"
-                fullWidth={true}
-                margin="normal"
-                InputLabelProps={{
-                    shrink: true,
-                }}
-                variant="filled"
-            />
-        </div>
-       </>
+            <div style={{ display: "flex", alignItems: "center" }}>
+                <img src={context.dataProfile.avatar} alt=""
+                    style={{ width: "50px", height: "50px", borderRadius: '50%', border: ' 5px solid white' }} />
+                <TextField
+                    id="filled-full-width"
+                    style={{ margin: 8 }}
+                    placeholder="Comment"
+                    label={`${context.dataProfile.first_name}` + " " + `${context.dataProfile.last_name}`}
+                    helperText="thời gian comment"
+                    fullWidth={true}
+                    margin="normal"
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                    variant="filled"
+                />
+            </div>
+
+
+            <Menu
+                id="simple-menu"
+                anchorEl={anchorEl}
+                keepMounted
+                open={Boolean(anchorEl)}
+                onClose={handleCloseMenu}
+            >
+                <MenuItem><Link to={'blog_single/' + `${props.id}`}>Detail</Link></MenuItem>
+                <MenuItem onClick={handleCloseMenu}>Update</MenuItem>
+                <MenuItem onClick={() => {deletePost(props.id)}}>Delete</MenuItem>
+            </Menu>
+        </>
     )
 }
 

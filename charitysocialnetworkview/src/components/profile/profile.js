@@ -1,9 +1,7 @@
 
-import React, { useEffect, useState, useContext, useMemo } from 'react';
+import React, { useState, useContext} from 'react';
 import BannerImage from '../banner/banner-bottom-shape';
-import callApi from '../../utils/apiCaller';
-import { makeStyles } from "@material-ui/core/styles";
-import {Paper, Grid, TextField, Button}from "@material-ui/core";
+import {Paper, Grid}from "@material-ui/core";
 import './../../css/profile_style.css'
 import { contexts } from "../../context/context"
 import ListProfile from './list_profile';
@@ -22,12 +20,12 @@ import Avatars from './avatar';
 //main
 const Profile = () => {
     let context = useContext(contexts)
-    let [status, setstatus] = useState(false)
+    // let [status, setstatus] = useState(false)
     // let listProfile = useMemo(({context}) => <ListProfile />,[context])
     let [nav_link,setNav_link]= useState('all')
     
     let contextNewAll = useContext(NewsPostContext)
-    let [action,setAction] = useState(true)
+    // let [action,setAction] = useState(true)
     let [profile, setProfile] = useState(context.dataProfile)
    
 
@@ -74,7 +72,7 @@ const Profile = () => {
                             {/* <img src={context.dataProfile.avatar} alt=""
                                 style={{ width: "200px", height: "200px", borderRadius: '50%', border: ' 5px solid white' }} /> */}
                             <h4 style={{ color: 'white' }}>{context.dataProfile.nick_name}</h4>
-                            <AvatarImg></AvatarImg>
+                            {/* <AvatarImg></AvatarImg> */}
                         </div>
                     </div>
                 </section>
@@ -83,7 +81,7 @@ const Profile = () => {
             <div className={ " container"} >
                 <Grid container style={{ padding: '30px' }} spacing={3}>
                     <Grid item xs={12} sm={4} >
-                        <Paper  >
+                        <Paper style={{marginBottom:"30px"}} >
                             <div style={{display: "flex", justifyContent: "space-between", padding: "10px 10px"}}>
                                 <h4 style={{ textAlign: 'center', padding: '10px' }}>Thông tin</h4>
                                 <UpdateProfile update={renderProfile}></UpdateProfile>
@@ -91,10 +89,13 @@ const Profile = () => {
                             
                             {/* {listProfile(status)} */}
                             <ListProfile action= {true} profile={profile}></ListProfile>
+                            
+                        </Paper>
+                        <Paper>
                             <ListImage></ListImage>
                         </Paper>
                     </Grid>
-                    <Grid item xs={12} sm={7} >
+                    <Grid item xs={12} sm={8} >
                         <Paper  style={{marginBottom:"20px"}}>
                             <MenuCategory onClickMenu  = {handlerOnClickMenu}></MenuCategory>
                         </Paper>

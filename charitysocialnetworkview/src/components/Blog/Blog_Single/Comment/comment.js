@@ -3,7 +3,7 @@ import CommentParrent from './comment_parrent'
 import {NewsPostContextMod} from "../../../../context/newspost_mod"
 import axios from 'axios';
 import dateFormat from 'dateformat';
-
+import moment from 'moment';
 
 
 
@@ -37,9 +37,12 @@ const Comment = () =>  {
                     id={commentItem.id}
                     user={commentItem.user}
                     avatar={commentItem.user.avatar}
-                    authorName={`${commentItem.user.last_name}` + ' ' + `${commentItem.user.first_name}`}
-                    timeComment={dateFormat(commentItem.created_date, "fullDate")}
+                    authorName={commentItem.user.username}
+                    Name={`${commentItem.user.last_name}` + ' ' + `${commentItem.user.first_name}`}
+                    timeComment={moment(new Date(commentItem.created_date), "YYYYMMDD, h:mm:ss").fromNow()}
                     content={commentItem.content}
+                    commentChild={commentItem.comment_child}
+                    idPost={commentParrent.detail.id}
                     
                     >
                 </CommentParrent>)
@@ -47,6 +50,8 @@ const Comment = () =>  {
     
 
         return (
+
+            
             <div className="comments mt-5 pt-lg-4">
                 <h4 className="side-title ">Comments ({commentParrent.comment.count})</h4>
                 {ShowComment()}

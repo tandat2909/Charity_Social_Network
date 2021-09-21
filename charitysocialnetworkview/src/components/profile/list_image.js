@@ -1,92 +1,59 @@
 
-import React from 'react';
-import {  ImageList, ImageListItem, ImageListItemBar, ListSubheader, IconButton, 
+import React, {useContext, useState} from 'react';
+import {  ImageList, ImageListItem,  ListSubheader, 
 }from "@material-ui/core";
-import { Info }from '@material-ui/icons';
+
 import { makeStyles } from "@material-ui/core/styles";
+import { contexts } from "../../context/context"
+import callApi from '../../utils/apiCaller';
 
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        flexGrow: 1
-    },
-    imageRoot: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-around',
-        overflow: 'hidden',
-        backgroundColor: theme.palette.background.paper,
-
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'space-around',
+      overflow: 'hidden',
+      backgroundColor: theme.palette.background.paper,
     },
     imageList: {
-        width: 500,
-        height: 450,
+      width: 500,
+      height: 450,
     },
-    icon: {
-        color: 'rgba(255, 255, 255, 0.54)',
-    },
-
-}));
+  }));
 
 
-const ListImage = (props) => {
+const ListImage = () => {
+    
+    let context = useContext(contexts)
+    const [reload, setReload] = useState(false);
     const classes = useStyles();
-    const itemData = [
-        {
-            img: 'https://lavenderstudio.com.vn/wp-content/uploads/2017/03/chup-san-pham.jpg',
-            title: 'Image',
-            author: 'author',
-        },
-        {
-            img: 'https://lavenderstudio.com.vn/wp-content/uploads/2017/03/chup-san-pham.jpg',
-            title: 'Image',
-            author: 'author',
-        },
-        {
-            img: 'https://lavenderstudio.com.vn/wp-content/uploads/2017/03/chup-san-pham.jpg',
-            title: 'Image',
-            author: 'author',
-        },
-        {
-            img: 'https://lavenderstudio.com.vn/wp-content/uploads/2017/03/chup-san-pham.jpg',
-            title: 'Image',
-            author: 'author',
-        },
-        {
-            img: 'https://lavenderstudio.com.vn/wp-content/uploads/2017/03/chup-san-pham.jpg',
-            title: 'Image',
-            author: 'author',
-        },
-        {
-            img: 'https://lavenderstudio.com.vn/wp-content/uploads/2017/03/chup-san-pham.jpg',
-            title: 'Image',
-            author: 'author',
-        },
-
-    ];
+    const getListImage = async() => {
+        let url = 'api/newspost/get-all-image-post-user/' + context.dataProfile.id + '/'
+        let a = await callApi(url, 'GET', null, null)
+        context.imagePost = a.data.results
+        console.log("list img: ", context.imagePost)
+        setReload(true)
+    }
+    if(context.imagePost.length === 0)
+     getListImage()
     return (
-        <div className={classes.imageRoot}>
-            <ImageList rowHeight={180} className={classes.imageList}>
-                <ImageListItem key="Subheader" cols={2} style={{ height: 'auto' }}>
-                    <ListSubheader component="div">Image</ListSubheader>
-                </ImageListItem>
-                {itemData.map((item,index) => (
-                    <ImageListItem key={index}>
-                        <img src={item.img} alt={item.title} />
-                        <ImageListItemBar
-                            title={item.title}
-                            subtitle={'by: '+item.author}
-                            // subtitle={<span>by: {item.author}</span>}
-                            actionIcon={
-                                <IconButton aria-label={`info about ${item.title}`} className={classes.icon}>
-                                    <Info />
-                                </IconButton>
-                            }
-                        />
-                    </ImageListItem>
-                ))}
-            </ImageList>
+        <div className={classes.root}>
+          <ImageList rowHeight={160} className={classes.imageList} cols={3}>
+            <ImageListItem key="Subheader" cols={1} style={{ height: 'auto' }}>
+                <ListSubheader component="div">Image</ListSubheader>
+            </ImageListItem>
+            <ImageListItem key="Subheader" cols={2} style={{ height: 'auto' }}>
+                <ListSubheader component="div">All</ListSubheader>
+            </ImageListItem>
+            { context.imagePost.length >0 && context.imagePost.map((item) => 
+              <ImageListItem key={item.id} cols={1} >
+                    <img src={item.image} alt={item.image}/>
+              </ImageListItem>
+            )
+             }
+          </ImageList>
         </div>
-    )
+      );
 }
 export default ListImage;

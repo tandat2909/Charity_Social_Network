@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import callApi from '../../utils/apiCaller';
 import dateFormat from 'dateformat';
 import ListCard from './list_card';
@@ -51,7 +51,7 @@ export const GetNewsAllUser = async (nav_link, change) => {
         p = await callApi('api/newspost/user/?browser=0', 'GET', null, null)
     }
     contextNewAll.result = p.data.results
-    console.log('GetNewsAllUser:', contextNewAll)
+    // console.log('GetNewsAllUser:', contextNewAll)
     change()
 }
 

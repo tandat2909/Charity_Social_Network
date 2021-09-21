@@ -6,7 +6,7 @@ import { withRouter } from 'react-router-dom';
 
 
 const WebsiteFooter = props => {
-    if (props.location.pathname === "/login" || props.location.pathname === "/chat") return null;
+    if (props.location.pathname === "/login" || props.location.pathname === "/chat" || props.location.pathname === "/register") return null;
     return (
         <Footer></Footer>
     );

@@ -1,13 +1,10 @@
 import React, {useContext, useState}  from 'react';
 import { makeStyles } from "@material-ui/core/styles";
-import {
-    Favorite, Share,
-    EmojiEmotions, SentimentVeryDissatisfied, ThumbUp, 
-}
+import {ThumbUp}
 from '@material-ui/icons';
-import {SpeedDial, SpeedDialIcon, SpeedDialAction} from "@material-ui/lab";
+import {SpeedDial, SpeedDialAction} from "@material-ui/lab";
 import { ListEmotion } from '../../context/emotion';
-import {Avatar, Fab, IconButton} from '@material-ui/core';
+import {Avatar, IconButton} from '@material-ui/core';
 import axios from 'axios';
 import "../../css/style-emotions.css"
 

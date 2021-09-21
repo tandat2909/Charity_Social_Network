@@ -8,7 +8,7 @@ import BannerImage from '../banner/banner-bottom-shape';
 import { NewsPostContextMod } from '../../context/newspost_mod'
 import callApi from '../../utils/apiCaller'
 import dateFormat from 'dateformat';
-import { Statistic } from 'antd';
+import { Alert, Button, Statistic } from 'antd';
 import { contexts } from '../../context/context'
 import { useHistory } from "react-router-dom";
 import { Gavel, DeleteForever, Edit } from '@material-ui/icons';
@@ -56,15 +56,22 @@ const AuctionDetail = (props) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isShowButton, setShowButton] = useState(false);
     const [isBlocked, setBlocked] = useState(false);
+    const [loadAlert, setLoadAlert] = useState(false);
     const [auction, setAuction] = useState({
         offer: ""
     });
+    const [price, setPrice] = useState({
+        price: ""
+    });
 
-    const [selectedValue, setSelectedValue] = React.useState('a');
+    const [selectedValue, setSelectedValue] = React.useState();
 
   const handleChangeRadio = (event) => {
+    console.log(event)
     setSelectedValue(event.target.value);
+    
   };
+ 
     const { Countdown } = Statistic;
     // let url = 'http://localhost:8000/api/newspost/' + props.id.match.params.id + '/'
     const GetDetailPost = async () => {
@@ -88,6 +95,10 @@ const AuctionDetail = (props) => {
             ...auction,
             [name]: value,
         });
+        setPrice({
+            ...price,
+            [name]: value,
+        })
     }
 
     const showOffer = () => {
@@ -101,39 +112,66 @@ const AuctionDetail = (props) => {
             let a = await callApi(url, 'PATCH', au, null).then(res => {
                 if (res.status === 200 || res.status === 201)
                     alert("bạn đã đấu giá thành công")
-            })
+            }).catch(err => {console.log(err.response)})
         }
         else {
             history.replace("/login")
         }
-        // console.log("auction: ", url)
-        setShowButton(true)
-        setBlocked(true)
+        
+        // setShowButton(true)
+        setLoadAlert(true)
+        setIsModalVisible(false);
     }
 
     const patchAuction = async () => {
+        // setBlocked(false)
+        let au = { ...auction }
+        let url = 'api/newspost/' + props.id.match.params.id + '/offer/'
+        let a = await callApi(url, 'PATCH', au, null).then(res => {
+            if (res.status === 200 || res.status === 201)
+                alert("bạn đã sửa giá thành công")
+        })
+       
+        // showOfferAgaint()
+        // console.log("auction: ", url)
+        setIsModalVisible(false);
+        
+        
+    }
+    const deleteAuction = async () => {
 
-        // if (context.authorization) {
-        //     let au = { ...auction }
-        //     let url = 'api/newspost/' + props.id.match.params.id + '/offer/'
-        //     let a = await callApi(url, 'PATCH', au, null).then(res => {
-        //         if (res.status === 200 || res.status === 201)
-        //             alert("bạn đã đấu giá thành công")
-        //     })
-        // }
-        // else {
-        //     history.replace("/login")
-        // }
-        // // console.log("auction: ", url)
-        // setShowButton(true)
-        setBlocked(false)
+        let url = 'api/historyauction/' + detailPost.detail.historyauction[0].id + '/'
+        let a = await callApi(url, 'DELETE', null, null).then(res => {
+            if (res.status === 204)
+                alert("bạn đã xóa giá thành công")
+        })
+        
+        // console.log("auction: ", url)
+        setLoadAlert(false)
+        setIsModalVisible(false);
+        
+    }
+
+    const setAuctionWinner = async() => {
+        if(selectedValue === undefined){
+            alert("bạn cần chọn người chiến thắng")
+        }
+        else{
+            let winner = {"history_auction" : parseInt(selectedValue)}
+            let url = 'api/newspost/' + props.id.match.params.id + '/set_auctioneer_winning/'
+            let a = await callApi(url, 'PATCH', winner, null).then(res => {
+                if (res.status === 200 || res.status === 201)
+                    alert("bạn đã thiết lập người chiến thắng thành công")
+            })
+        }
     }
 
     const showHistory = () => 
         detailPost.detail.historyauction && detailPost.detail.historyauction.map((postItem) => {
+
             return(
                 
-                    <ListItem dense button>
+                    <ListItem dense button key={"itemHistory"+postItem.id} >
                         <ListItemAvatar>
                             <Tooltip title={`${postItem.user.last_name}` + ' ' + `${postItem.user.first_name}`} arrow placement="top">
                                 <Avatar src={postItem.user.avatar}>
@@ -144,11 +182,11 @@ const AuctionDetail = (props) => {
                         <ListItemText primary={postItem.price} />
                         <ListItemSecondaryAction>
                             <GreenRadio  edge="end"
-                            checked={selectedValue === 'c'}
-                            onChange={handleChangeRadio}
-                            value={postItem.id}
-                            name="radio-button-demo"
-                            inputProps={{ 'aria-label': 'C' }}
+                                checked ={parseInt(selectedValue) === postItem.id}
+                                onChange={handleChangeRadio}
+                                value={postItem.id}
+                                name="history_auction"
+                                inputProps={{ 'aria-label': postItem.id }}
                             />
                         </ListItemSecondaryAction>
                     </ListItem>
@@ -156,6 +194,18 @@ const AuctionDetail = (props) => {
             )
             })
 
+    const showOfferAgaint = () => {
+        return(
+            <Alert message="Bạn đã offer cho bài viết này với giá " type="info" showIcon style={{margin: 5}} closable
+                action={
+                    <Button size="small" type="primary" onClick={() => {setShowButton(true); setIsModalVisible(true)}}>
+                        Offer Againt
+                    </Button>
+                }/> 
+        )    
+    }
+    console.log("profile: ", context.dataProfile)
+    console.log("bai: ", detailPost.detail)
     return (
         <>
             <InnerBanner></InnerBanner>
@@ -187,12 +237,12 @@ const AuctionDetail = (props) => {
                                             <p style={{ margin: "5px 0" }}>Time remaining: </p>
                                         </Grid>
                                         <Grid item sm={6} xs={12} style={{ textAlign: "left" }}>
-                                            <p style={{ color: "black", fontSize: "1.3em" }}>{detailPost.detail.info_auction[0].price_start} VNĐ</p>
-                                            <p style={{ color: "black" }}>{dateFormat(detailPost.detail.info_auction[0].start_datetime, "dd-mm-yyyy  HH:MM:ss")} </p>
-                                            <p style={{ color: "black" }}>{dateFormat(detailPost.detail.info_auction[0].end_datetime, "dd-mm-yyyy  HH:MM:ss")} </p>
+                                            <p style={{ color: "black", fontSize: "1.3em" }}>{detailPost.detail.info_auction.price_start} VNĐ</p>
+                                            <p style={{ color: "black" }}>{dateFormat(detailPost.detail.info_auction.start_datetime, "dd-mm-yyyy  HH:MM:ss")} </p>
+                                            <p style={{ color: "black" }}>{dateFormat(detailPost.detail.info_auction.end_datetime, "dd-mm-yyyy  HH:MM:ss")} </p>
                                             <p style={{ color: "black" }}>{`${detailPost.detail.user.last_name}` + ' ' + `${detailPost.detail.user.first_name}`}  </p>
                                             {detailPost.detail.historyauction.length > 0 ? <p style={{ color: "black" }}>{detailPost.detail.historyauction.length}  people</p> : ""}
-                                            <p style={{ color: "black" }}><Countdown value={new Date(detailPost.detail.info_auction[0].end_datetime).getTime()} format="D day, HH:mm:ss" valueStyle={{ color: '#ef0d18' }} /></p>
+                                            <p style={{ color: "black" }}><Countdown value={new Date(detailPost.detail.info_auction.end_datetime).getTime()} format="D day, HH:mm:ss" valueStyle={{ color: '#ef0d18' }} /></p>
 
                                         </Grid>
 
@@ -219,6 +269,14 @@ const AuctionDetail = (props) => {
 
                             </div>
                         </Paper>
+                        {detailPost.detail.historyauction.length > 0  || loadAlert === true ? 
+                            <Alert message={'Bạn đã offer cho bài viết này với giá ' + `${detailPost.detail.historyauction[0].price}` }type="info" showIcon style={{margin: 5}} closable
+                                action={
+                                    <Button size="small" type="primary" onClick={() => {setShowButton(true); setIsModalVisible(true)}}>
+                                        Offer Againt
+                                    </Button>
+                                }/>  : ""}
+
                         {isModalVisible === true ?
                             <Paper className={classes.paper} style={{ display: "flex" }} >
                                 <TextField
@@ -236,13 +294,15 @@ const AuctionDetail = (props) => {
                                 />
                                 {isShowButton === true ? "" : <button className="btn btn-style btn-primary" style={{ textAlign: "right", margin: "0 10px" }} onClick={postAuction}>Submit</button>}
                                 {isShowButton === true ? <>
-                                    <button className="btn btn-style btn-primary" onClick={patchAuction} style={{ textAlign: "right", margin: "0 10px", backgroundColor: "green", borderColor: "#298627" }}><Edit /> Edit</button>
-                                    <button className="btn btn-style btn-primary" style={{ textAlign: "right", margin: "0 10px", backgroundColor: "red", borderColor: "#f50426" }}><DeleteForever /> Delete</button></> : ""}
+                                    <button className="btn btn-style btn-primary" onClick={patchAuction} style={{ textAlign: "right", margin: "0 10px", backgroundColor: "green", borderColor: "#298627", display: "flex" }}><Edit /> Edit</button>
+                                    <button className="btn btn-style btn-primary" onClick={deleteAuction} style={{ textAlign: "right", margin: "0 10px", backgroundColor: "red", borderColor: "#f50426", display: "flex" }}><DeleteForever /> Delete</button></> : ""}
                             </Paper> : ""}
-                            {detailPost.detail.historyauction.length > 0 ? 
-                                <List subheader={<ListSubheader>History Auction</ListSubheader>} className={list.root} style={{height: "200px", overflowY: "scroll"}}>
+                            {detailPost.detail.historyauction.length > 0 && context.dataProfile.id === detailPost.detail.user.id
+                             ? <Paper className={classes.paper} elevation={3}>
+                                <List subheader={<ListSubheader><h3>History Auction</h3></ListSubheader>} className={list.root} style={{height: "200px", overflowY: "scroll",  margin: "30px auto"}}>
                                     {showHistory()}
                                 </List>
+                                <button className="btn btn-style btn-primary" style={{ margin: "15px auto"}} onClick={setAuctionWinner}>Submit</button></Paper>
                                  : ""}
                         </Grid>
                     </Grid> : ""}

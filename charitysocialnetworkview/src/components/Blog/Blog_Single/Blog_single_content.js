@@ -7,11 +7,12 @@ import TagAndShare from './Tag_Share';
 import SinglePostImage from './single-post-image';
 import Reply from './reply/reply';
 import RelatedPost from './ReplatedPost/RelatedPost';
+import { NewsPostContextMod } from '../../../context/newspost_mod';
 
 
 
 const BlogSingleContent = () => {
-    
+    let inforUsser = useContext(NewsPostContextMod)
 
         return (
             <div className="container pb-lg-4">
@@ -20,7 +21,8 @@ const BlogSingleContent = () => {
                     <PostContent></PostContent>
                     <TagAndShare></TagAndShare>
                     <PreviousNext></PreviousNext>
-                    <AuthorCard></AuthorCard>
+                    {inforUsser.detail.info_auction.receiver !== null ? <AuthorCard></AuthorCard> : ""}
+                    
                     <Comment></Comment>
                     <Reply></Reply>
                     <RelatedPost></RelatedPost>

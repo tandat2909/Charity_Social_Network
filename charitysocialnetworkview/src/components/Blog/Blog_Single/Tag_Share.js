@@ -3,12 +3,16 @@ import { NewsPostContextMod } from '../../../context/newspost_mod'
 import { ListEmotion } from '../../../context/emotion';
 import axios from 'axios';
 import callApi from '../../../utils/apiCaller';
-import { Modal, Tabs, Tooltip } from 'antd';
+import { Modal, Tabs, Tooltip, Input } from 'antd';
 import { contexts } from '../../../context/context'
+import { report } from '../../../context/report'
 import { useHistory } from "react-router-dom";
-import {Avatar, Badge} from '@material-ui/core';
+import { Badge, List, ListSubheader, ListItem,ListItemText, ListItemSecondaryAction, Checkbox, TextArea} from '@material-ui/core';
 import AvatarGroup from '@material-ui/lab/AvatarGroup';
-import { makeStyles, withStyles } from '@material-ui/core/styles';
+import { withStyles } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
+import Avatar from '@mui/material/Avatar';
+
 
 const SmallAvatar = withStyles((theme) => ({
     root: {
@@ -18,16 +22,39 @@ const SmallAvatar = withStyles((theme) => ({
     },
   }))(Avatar);
 
+  const useList = makeStyles((theme) => ({
+    root: {
+        width: '100%',
+        margin: "0 auto",
+        backgroundColor: theme.palette.background.paper,
+    },
+}));
+
 const TagAndShare = () => {
     let hashTag = useContext(NewsPostContextMod)
     let listEmotion = useContext(ListEmotion)
     let context = useContext(contexts)
+    let listReport = useContext(report)
     let [get_emotion_success, setGetEmotionSuccess] = useState(false)
+    let [post_emotion_success, setPostEmotionSuccess] = useState(false)
     let history = useHistory()
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [isModalRepost, setIsModalRepost] = useState(false);
+    let [checkBoxValue, setCheckBoxValue] = useState()
+    let [contentReport, setContentReport] = useState()
 
-
+    const list = useList();
     const { TabPane } = Tabs;
+    const { TextArea } = Input;
+
+    const handleChangeCheckbox = (event) => {
+        setCheckBoxValue(event.target.value);
+    }
+
+    const handleChangeContent = (event) => {
+        setContentReport(event.target.value);
+    }
+
 
     const hashTags = (props = hashTag.detail.hashtag) =>
         props && props.map((hashTagItem) => {
@@ -65,7 +92,7 @@ const TagAndShare = () => {
         else {
             history.replace("/login")
         }
-
+        
     }
 
     const renderEmotion = (props = listEmotion.list) =>
@@ -73,7 +100,7 @@ const TagAndShare = () => {
             return (
 
                 <Tooltip title={emotionItem.name} placement="top">
-                    <Avatar  src={emotionItem.image} onClick={() => { postEmotion(emotionItem.id) }} />
+                    <Avatar sx={{ width: 55, height: 55 }} src={emotionItem.image} onClick={() => { postEmotion(emotionItem.id) }} />
                 </Tooltip>
             )
         })
@@ -82,10 +109,13 @@ const TagAndShare = () => {
         let url = 'api/newspost/' + hashTag.detail.id + '/get_emotion_post/'
         let a = await callApi(url, 'GET', null, null)
         listEmotion.emotion = a.data
-        setGetEmotionSuccess(true)
+        setPostEmotionSuccess(true)
         console.log("tông: ", listEmotion.emotion.statistical.length)
     }
 
+
+
+    //thống kê người thả emotion cho bài viết
     const getEmotionOfType = () =>
         listEmotion.emotion.statistical && listEmotion.emotion.statistical.map((emotionItem) => {
             return (
@@ -98,7 +128,7 @@ const TagAndShare = () => {
                     }
                     key={emotionItem.id}
                 >
-                    {listEmotion.emotion.data.filter(d => d.emotion_type == emotionItem.id).map(res => {
+                    {listEmotion.emotion.data && listEmotion.emotion.data.filter(d => d.type == emotionItem.id).map(res => {
                         return (
                             <div style={{ margin: "5px", fontSize: "15px", display: "flex" }}>
                                 <Badge
@@ -109,11 +139,10 @@ const TagAndShare = () => {
                                     }}
                                     badgeContent={<SmallAvatar alt="Remy Sharp" src={emotionItem.image} />}
                                 >
-                                    <Avatar src={res.author.avatar} >{(res.author.username).slice(0, 1)}</Avatar>
+                                    <Avatar src={res.user.avatar} >{(res.user.username).slice(0, 1)}</Avatar>
                                 </Badge>
 
-                                
-                                {res.author.username}
+                                {res.user.username} 
                             </div>
                         )
                     }
@@ -131,13 +160,54 @@ const TagAndShare = () => {
     const getEmotionGroup = () =>
         listEmotion.emotion.statistical && listEmotion.emotion.statistical.map((emotionItem) => {
             return (
-                <Avatar src={emotionItem.image}>
-
+                <Avatar src={emotionItem.image} sx={{ width: 50, height: 50 }}>
                 </Avatar>
             )
         }
         )
 
+
+    const getListReport = async() => {
+        let a = await callApi("api/optionreport/", 'GET', null, null)
+        listReport.list = a.data.results
+    }
+    const showListReport = () =>
+        listReport.list && listReport.list.map((item, index) => {
+            return (
+                <ListItem dense button key={item.id} >
+                        <ListItemText primary={(index + 1) + '. ' + item.content} />
+                        <ListItemSecondaryAction>
+                            <Checkbox  edge="end"
+                                checked ={parseInt(checkBoxValue) === item.id}
+                                onChange={handleChangeCheckbox}
+                                value={item.id}
+                                name="content"
+                                inputProps={{ 'aria-label': item.id }}
+                            />
+                        </ListItemSecondaryAction>
+                    </ListItem>
+            )
+        })
+
+
+
+    const ReportPost = async() => {
+        // console.log("id bài viết: ",hashTag.detail.id)
+        if(checkBoxValue === undefined){
+            alert("bạn cần chọn lí do để report")
+        }
+        else{
+            let report = {"reason" : parseInt(checkBoxValue), "content" : contentReport}
+            let url = 'api/newspost/' + hashTag.detail.id + '/report/'
+            let a = await callApi(url, 'POST', report, null).then(res => {
+                if (res.status === 200 || res.status === 201)
+                    alert("bạn đã report bài viết thành công")
+            }).catch(err => {console.log(err)})
+            setIsModalRepost(false)
+        }
+    }
+
+    getListReport()
     getListEmotion()
     getEmotionOfPost()
     return (
@@ -148,7 +218,10 @@ const TagAndShare = () => {
                     {hashTags()}
                     {/* <a href="#blog-tag">Disaster Relief</a> */}
                 </div>
-                
+                <div class="buttons-singles">
+                    <h4>Report:</h4>
+                        <a href="#blog-share" onClick={() => {setIsModalRepost(true)}}><span class="fas fa-user-cog" aria-hidden="true" style={{fontSize: "25px"}}></span></a>
+                    </div>
             </div>
             <div className="container">
                 <div  style={{ display: "flex" }}>
@@ -168,6 +241,34 @@ const TagAndShare = () => {
                     {getEmotionOfType()}
                 </Tabs>,
 
+            </Modal>
+
+            <Modal title="Repost Post" visible={isModalRepost}  onCancel={() => {setIsModalRepost(false)}} onOk={ReportPost}>
+                <List 
+                    subheader={
+                        <ListSubheader>
+                            <p>Thông tin bài viết</p>
+                            <div style={{margin: "15px auto"}}>
+                                <h4 style={{color: "#ff5200"}}>{hashTag.detail.title}</h4>
+                                <p style={{color: "#808080ad", fontSize: "14px"}}>Được tạo bởi {hashTag.detail.user.username}</p>
+                            </div>
+                            {/* <Avatar src={hashTag.detail.user.avatar} /> */}
+                            <h5 style={{color: "red"}}>Hãy chọn vấn đề</h5>
+                            
+                        </ListSubheader>
+                        } 
+                    className={list.root} style={{  margin: "0 auto"}}>
+                    {showListReport()}
+                </List>
+                <TextArea
+                    className="form-control-single" 
+                    placeholder="Description" 
+                    rows={2}
+                    spellCheck="false" 
+                    style={{backgroundColor:"#dcd4d433"}}
+                    onChange={handleChangeContent}
+                    >
+                        </TextArea>
             </Modal>
         </>
     )

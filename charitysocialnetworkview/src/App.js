@@ -17,6 +17,12 @@ import {contexts} from './context/context'
 import AuthorizationRequired from './components/error/error_401';
 import CausesPage from './components/Cause/causes';
 import AuctionDetail from './components/Auction/auction';
+import Statitical from './components/statitic/Statitical';
+// import AppProvider from './context/appProvider';
+// import AddRoom from './components/chatBox/AddRoom';
+// import InviteMember from './components/chatBox/inviteMember';
+import Search from './components/search/search'
+import Register from './components/register/register';
 
 const App = () => {
   const [data, setData] = useState(false)
@@ -43,7 +49,8 @@ if(Object.keys(context.dataProfile).length === 0 && localStorage.getItem('author
  
     <Router>
     
-      {/* <AuthProvider> */}
+      {/* <AuthProvider>
+        <AppProvider> */}
       <WebsiteHeader />
       <Switch>
         <Route path="/" exact component={Home} ></Route>
@@ -54,10 +61,14 @@ if(Object.keys(context.dataProfile).length === 0 && localStorage.getItem('author
         <Route path="/blog/:id/auction" component={(props) => (<AuctionDetail id={props} />)}></Route>
         <Route path="/contact" component={Contact}></Route>
         <Route path="/login" component={Logins} ></Route>
+        <Route path="/register" component={Register} ></Route>
+        <Route path="/search" component={Search} ></Route>
+        <Route path="/statistic" component={Statitical} ></Route>
+        <Route path="/chat" component={ChatRoom}></Route>
         {context.authorization === true ?
           <Switch>
             <Route path="/profile" component={Profile}></Route>
-            <Route path="/chat" component={ChatRoom}></Route>
+            
             <Route component={Error}></Route>
           </Switch>
           :  <Switch>
@@ -68,7 +79,10 @@ if(Object.keys(context.dataProfile).length === 0 && localStorage.getItem('author
         
       </Switch>
       <WebsiteFooter />
-      {/* </AuthProvider> */}
+      {/* <InviteMember />
+      <AddRoom /> */}
+      {/* </AppProvider>
+      </AuthProvider> */}
     </Router>
 
   );

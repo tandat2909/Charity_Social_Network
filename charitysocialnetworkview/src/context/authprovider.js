@@ -5,12 +5,10 @@ import  {auth} from '../components/firebase/config';
 import {Spin} from 'antd';
 import { useHistory } from "react-router-dom";
 
-export const AuthContext = React.createContext({
-    user:null
-});
+export const AuthContext = React.createContext();
 
-export default function AuthProvider(props){
-    let f = useContext(AuthContext)
+export default function AuthProvider({ children }){
+    const [user, setUser] = useState({});
     const [isloading, setIsloading] = useState(true)
     const history = useHistory();
     useEffect(() => {
@@ -18,9 +16,9 @@ export default function AuthProvider(props){
             console.log(data)
             if(data){
                 const{ displayName, email, uid, photoURL } = data 
-                f.user = { displayName, email, uid, photoURL }
+                setUser({ displayName, email, uid, photoURL })
                 setIsloading(false)
-                history.push('/')
+                // history.replace("/")
                 return;
             }
             setIsloading(false)
@@ -36,9 +34,9 @@ export default function AuthProvider(props){
 
 
     return(
-        <>
-            {isloading ? <Spin /> : props.children}
-        </>
+        <AuthContext.Provider value={{ user }}>
+        {isloading ? <Spin style={{ position: 'fixed', inset: 0 }} /> : children}
+      </AuthContext.Provider>
     );
 }
 

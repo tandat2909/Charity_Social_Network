@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import ItemTestimonial from './item-testimonial';
 import ListTestimonial from './list-testimonial';
 
 

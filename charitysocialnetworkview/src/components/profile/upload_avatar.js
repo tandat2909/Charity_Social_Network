@@ -17,6 +17,7 @@ const AvatarImg = () => {
     previewVisible: false,
     previewImage: "",
   })
+  let [loadSucess, setLoadSucess] = useState(false);
 
   const handleCancel = () => setPreview({ ...preview, previewVisible: false });
 
@@ -51,7 +52,7 @@ const AvatarImg = () => {
       }
 
     })
-
+    setLoadSucess(true)
   };
 
   return (

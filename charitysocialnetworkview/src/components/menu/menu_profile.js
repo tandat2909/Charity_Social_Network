@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Menu, MenuItem, Avatar } from '@material-ui/core';
-import { NavLink, Route } from 'react-router-dom';
+import { NavLink, Route, Link } from 'react-router-dom';
 import { contexts } from "../../context/context"
 import { withStyles } from '@material-ui/core/styles';
 import Badge from '@material-ui/core/Badge';
@@ -179,7 +179,7 @@ const handleChange = (event) => {
         }}
         variant="dot"
       >
-        <Avatar onClick={handleClick} alt="Remy Sharp" src={context.dataProfile.avatar}></Avatar>
+        <Avatar onClick={handleClick} alt="Remy Sharp" src={context.dataProfile.avatar} ></Avatar>
       </StyledBadge>
 
 
@@ -200,6 +200,7 @@ const handleChange = (event) => {
           </MenuLink>
         </MenuItem>
         <MenuItem onClick={OpenDialog}>Change Password</MenuItem>
+        <MenuItem><Link to="/statistic">Statistic</Link></MenuItem>
         <MenuItem onClick={logout}>Logout</MenuItem>
       </Menu>
 

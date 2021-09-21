@@ -1,12 +1,13 @@
 import React, {useContext} from 'react';
 import {NewsPostContextMod} from '../../../context/newspost_mod'
 import dateFormat from 'dateformat';
+import AuthorImage from './Author/author_image';
 
 const BlogDescBig = () => {
     let detail = useContext(NewsPostContextMod)
         return (
-          
-            <div className="py-md-5 pt-5 pb-4 w3l-singleblock1">
+         
+            <div className="py-md-5 pt-5 pb-4 w3l-singleblock1" >
                 <div className="container mt-md-3">
                     <h3 className="blog-desc-big">{detail.detail.title}</h3>
                     <div className="blog-post-align">
@@ -17,13 +18,8 @@ const BlogDescBig = () => {
                         </div>
                     </div>
                 </div>
-                {/* <div style={{display: "flex"}}>
-                   
-                    <img src={process.env.PUBLIC_URL + '/images/team1.jpg'} style={{width: "345px", height:"447px"}}/>
-                    <img src={process.env.PUBLIC_URL + '/images/winner2.jpg'} style={{position: "absolute", opacity: "0.5",width: "345px", height:"447px"}}/>
-                    
-                </div> */}
             </div>
+            
         )   
 }
 export default BlogDescBig;

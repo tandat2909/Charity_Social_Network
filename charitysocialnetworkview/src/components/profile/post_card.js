@@ -18,6 +18,7 @@ import { InputNumber } from 'antd';
 import { DatePicker, Space } from 'antd';
 import dateFormat from 'dateformat';
 import moment from 'moment';
+import {MyCustomUploadAdapterPlugin} from '../../utils/ckeditor_upload_image';
 
 const useStylesCard = makeStyles((theme) => ({
 
@@ -59,8 +60,7 @@ const PostCard = (props) => {
         hashtag: '', 
         content: '',
     });
-   
-
+    
     const validate = (fieldValues = state) =>{
         let temp = { ...errors }
         if('category' in fieldValues)
@@ -81,7 +81,7 @@ const PostCard = (props) => {
             ...temp
         })
         if (fieldValues === state)
-            return Object.state(temp).every(x => x == "")
+            return Object.state(temp).every(x => x === "")
         
 
     }
@@ -160,7 +160,7 @@ const PostCard = (props) => {
 
     const auction = () =>{
         const { RangePicker } = DatePicker;
-        if(state.category == 1)
+        if(state.category === 1)
             return(
                 <>
                      <div className={classes.post}>
@@ -259,7 +259,7 @@ const PostCard = (props) => {
                             select
                             label="Category"
                             // defaultValue="No auction"
-                            fullWidth='50%'
+                            fullWidth={true}
                             variant="outlined"
                             name="category"
                             onChange={handleChange}
@@ -347,12 +347,16 @@ const PostCard = (props) => {
                             //     // You can store the "editor" and use when it's needed.
                             //     console.log('Editor is ready to use!', editor);
                             // }}
+                            
                         
                             config={{
-                                
+                                // extraPlugins: [ MyCustomUploadAdapterPlugin ],
                                 ckfinder: {
-                                uploadUrl: 'http://localhost:8000/api/upload/image/'
-                            }}}
+                                   
+                                    uploadUrl: 'http://localhost:8000/api/newspost/ckeditor/upload/'
+                                },
+                                headers:{'Authorization': localStorage.getItem('token_type') + ' ' + localStorage.getItem('access_token')}
+                            }}
                             name="content"
                             onChange={handleCkEditor}
                             

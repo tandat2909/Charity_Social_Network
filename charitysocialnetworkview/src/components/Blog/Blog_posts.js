@@ -11,7 +11,6 @@ import {NewsPostContextMod} from '../../context/newspost_mod'
 
 const BlogPost = () => {
     let detailPost = useContext(NewsPostContextMod)
-    let [reload_page,setReloadPage]=useState(false)
     
     
     const GetPost = async(page = 1) => {
@@ -22,16 +21,16 @@ const BlogPost = () => {
           console.log("page", page)
         detailPost.results = a.data
         // setReloadPage(true)
-        setPagination({...pagination,page:page, totalRow: detailPost.results.count})
+        setPagination({...pagination,page:page, totalRow: detailPost.results.count, })
         
     }
     let [pagination, setPagination] = useState({
         page: 1,
-        limit: 1,
-        totalRow: 3,
+        limit: 3,
+        totalRow: detailPost.results.count,
     })
 
-    if(detailPost.results.length===0){
+    if(Object.keys(detailPost.results).length===0){
         GetPost()
     }
 
@@ -56,13 +55,14 @@ const BlogPost = () => {
                     dateCreate={postItem.created_date}
                     description={postItem.description}
                     image={postItem.image}
-                    end_datetime={postItem.category.id === 1 ? postItem.info_auction[0].end_datetime:undefined}
-                
+                    end_datetime={postItem.category.id === 1 ? postItem.info_auction.end_datetime:undefined
+                    }
+                                                                     
                     >
                 </BlogPostItem>)
             });
     
-        //tuckfyufvhj
+      
     
 
 
@@ -74,7 +74,8 @@ const BlogPost = () => {
             <section className="w3l-blogblock py-5">
                 <div className="container pt-lg-4 pt-md-3">
                     {ShowPost()}
-                    <Pagination pagination={pagination} onPageChange={handlePageChange}></Pagination>
+                    {Object.keys(detailPost.results).length !== 0 ? <Pagination pagination={pagination} onPageChange={handlePageChange}></Pagination> : ""}
+                    
                 </div>
             </section>
         </div>

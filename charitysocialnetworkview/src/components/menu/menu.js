@@ -8,7 +8,7 @@ import { Link, withRouter } from 'react-router-dom';
 
 
 const WebsiteHeader = props => {
-    if (props.location.pathname === "/login" || props.location.pathname === "/chat") return null;
+    if (props.location.pathname === "/login" || props.location.pathname === "/chat" || props.location.pathname === "/register") return null;
     return (
         <Menu></Menu>
     );

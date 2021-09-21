@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState} from 'react';
 import BannerImage from '../../banner/banner-bottom-shape';
 import InnerBanner from '../../banner/inner_banner';
 import BlogDescBig from './blog-desc-big';
