@@ -61,12 +61,14 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+
+    'AppCharitySocialNetwork.middlewares.LoginByClientIdMiddleware',
+    'AppCharitySocialNetwork.middlewares.GraphQLOAuth2TokenMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    # 'debug_toolbar.middleware.DebugToolbarMiddleware',,
-    'AppCharitySocialNetwork.middlewares.LoginByClientIdMiddleware',
-    'AppCharitySocialNetwork.middlewares.AuthorizationMiddleware',
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
 
 ]
 
@@ -251,17 +253,36 @@ CKEDITOR_UPLOAD_PATH = 'images/newspost/'
 
 CATEGORY_POST_AUCTION = 1
 
+# SWAGGER_SETTINGS = {
+#     'SHOW_REQUEST_HEADERS': True,
+#     'SECURITY_DEFINITIONS': {
+#         'Bearer': {
+#             'type': 'apiKey',
+#             'name': 'Authorization',
+#             'in': 'header'
+#         }
+#     },
+#     'USE_SESSION_AUTH': False,
+#     'JSON_EDITOR': True,
+#     'SUPPORTED_SUBMIT_METHODS': [
+#         'get',
+#         'post',
+#         'put',
+#         'delete',
+#         'patch',
+#     ],
+# }
 # phần thêm của đồ án
 
+GRAPHENE_URL = "/api/graphql/"
 GRAPHENE = {
     "SCHEMA": "AppCharitySocialNetwork.schema.schema",
     'MIDDLEWARE': [
         'graphene_django.debug.DjangoDebugMiddleware',
         # 'AppCharitySocialNetwork.middlewares.AuthorizationMiddleware',
         # 'oauth2_provider.contrib.rest_framework.OAuth2Authentication'
+
     ],
     'RELAY_CONNECTION_MAX_LIMIT': 100,  # chỉ định số đối tượng lấy được trong một lần request,
     'CAMELCASE_ERRORS': False,  # tên field bị lỗi sẽ được chuyển thành chuẩn đặt tên CAMELCASE nếu được bặt lên True
 }
-
-

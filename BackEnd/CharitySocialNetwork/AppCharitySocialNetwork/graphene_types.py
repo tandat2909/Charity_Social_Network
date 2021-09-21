@@ -1,4 +1,3 @@
-import six
 from django.contrib.auth.models import Group
 from graphene import Scalar, String
 from graphene_django import converter
@@ -25,7 +24,11 @@ class CloudinaryUrl(Scalar):
 
 @converter.convert_django_field.register(CloudinaryField)
 def convert_cloudinary_field_to_string(field, registry=None):
-    """Đăng ký chuyển đổi CloudinaryField sang url string """
+    """
+        Đăng ký chuyển đổi CloudinaryField sang url string
+        Nói cho graphene_django biết chuyển đổi field dữ liệu đó như thế nào
+
+    """
     return CloudinaryUrl(description=field.help_text, required=not field.null)
 
 
@@ -69,6 +72,14 @@ class PostObjectType(DjangoObjectType):
     def resolve_comment_set(self, info):
         return self.comment_set.filter(active=True, comment_parent=None)
 
+    def resolve_historyauction(self, info):
+        user_post = self.user
+        user = info.context.user
+        if user.is_authenticated:
+            if user.pk == user_post.pk or user.is_superuser:
+                return self.historyauction.filter(active=True)
+        return self.historyauction.filter(active=True, user_id=user.pk)
+
 
 class AuctionItemObjectType(DjangoObjectType):
     class Meta(BaseMeta):
@@ -95,7 +106,6 @@ class HistoryAuctionObjectType(DjangoObjectType):
             'post',
             'update_date',
             'user'
-
         ]
 
 
@@ -123,8 +133,7 @@ class HashtagObjectType(DjangoObjectType):
 class CommentObjectType(DjangoObjectType):
     class Meta(BaseMeta):
         model = Comment
-        fields = ['id', 'content', 'image', 'emotions_comment', 'created_date', 'update_date', 'comment_child', 'user',
-                  ]
+        fields = ['id', 'content', 'image', 'emotions_comment', 'created_date', 'update_date', 'comment_child', 'user']
 
 
 # Emotion làm lại database chỉ cần một emotion làm hết

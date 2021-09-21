@@ -15,6 +15,7 @@ class UserQuery:
     def resolve_notifications(self, info, **kwargs):
         if info.context.user.is_authenticated:
             return info.context.user.notifications.filter(active=True)
+         # return User.objects.none()
         raise GraphQLError("You do not have permission to perform this query")
 
     def resolve_accounts(self, info, **kwargs):
@@ -23,4 +24,5 @@ class UserQuery:
         """
         if info.context.user.is_authenticated:
             return User.objects.get(pk=info.context.user.id)
+        # return User.objects.none()
         raise GraphQLError("You do not have permission to perform this query")

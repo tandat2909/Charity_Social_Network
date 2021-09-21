@@ -75,7 +75,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         return self.queryset
 
     def get_permissions(self):
-        if self.action in ['list', 'get_comments', 'get_emotion_post', 'retrieve', 'category',
+        if self.action in ['list', 'get_comments', 'get_emotion_post','ckeditor_upload', 'retrieve', 'category',
                            "get_all_image_post_user"]:
             return [permissions.AllowAny(), ]
         if self.action in ["is_post_allowed", "get_list_pending_post"]:
@@ -536,7 +536,6 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
     @action(methods=["POST"], detail=False, url_path="ckeditor/upload")
     def ckeditor_upload(self, request, **kwargs):
         try:
-            self.get_queryset()
             uploaded_file = request.FILES["upload"]
             file = cloudinary.uploader.upload(uploaded_file)
             # print("sssssss",file.get("secure_url",None))

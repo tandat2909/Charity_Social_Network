@@ -9,4 +9,4 @@ from ..serializers import OptionReportSerializer
 class ReportViewSet(ListModelMixin, GenericViewSet):
     queryset = OptionReport.objects.all()
     serializer_class = OptionReportSerializer
-    permission_classes = [PermissionUserReport]
+    permission_classes = [PermissionUserReport,]
