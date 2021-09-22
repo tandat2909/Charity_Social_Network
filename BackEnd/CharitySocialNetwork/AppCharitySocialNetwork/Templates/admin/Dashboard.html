@@ -1,0 +1,52 @@
+{% extends 'admin/base_action.html' %}
+{% load i18n static %}
+{%block script %}
+{{block.super}}
+<!--<script src="{% static 'assets/js/jquery.metisMenu.js'%}"></script>-->
+<script src="{% static 'assets/js/chart-data.js' %}"></script>
+{% endblock %}
+{%block content_header %}
+{% endblock %}
+{% block content_body%}
+
+<div class="dashboard-cards">
+    <div class="row">
+        <div class="col-sm-6 col-md-6 ">
+            <div class="">
+                <canvas id="user-chart" class="m-auto" data-datasets="{{data_user}}" width="320" height="250"
+                        aria-label="Hello ARIA World" role="img"></canvas>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-6">
+            <div class="">
+                <canvas id="post-chart" class="m-auto" data-datasets="{{data_post_auction}}" width="320" height="250"
+                        aria-label="Hello ARIA World" role="img"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-12">
+        <div class="col-12 legend">
+            {% now "Y" as current_year %}
+            {% for i in years_have_post %}
+            <div class="form-check form-check-inline checkbox-year">
+                <input class="form-check-input" type="radio" id="nam{{i}}" name="checkbox_year"
+                       value="{{i}}" {% if i|slugify == current_year %} checked {%endif%}>
+                <label class="form-check-label" for="nam{{i}}">Năm {{i}}</label>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="">
+            <canvas id="post-year-bar-chart" class="" width="1200" height="300" aria-label="Hello ARIA World"
+                    role="img"></canvas>
+        </div>
+    </div>
+    <div class="col-xs-12 col-sm-6 col-md-12">
+        <div class="">
+            <canvas id="post-month-bar-chart" class="" width="1400" height="400" aria-label="Hello ARIA World"
+                    role="img"></canvas>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

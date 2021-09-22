@@ -1,0 +1,99 @@
+/*Custom scrollbar*/
+::-webkit-scrollbar {
+    width: 20px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #d6dee1;
+    border-radius: 20px;
+    border: 6px solid transparent;
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #a8bbbf;
+}
+
+
+.cards a {
+    text-decoration: none;
+    background-color: transparent;
+
+
+}
+
+.cards .card {
+    position: relative;
+    box-shadow: 0px 0px 24px 0px rgb(0 123 255 / 31%);
+    border-color: #f0ffff00;
+    margin-top: 1.5rem;
+
+}
+
+.cards .card .badge {
+    position: absolute;
+    right: 0;
+}
+
+.cards .card img {
+    height: 160px;
+}
+
+.cards .scrolls {
+
+    /*overflow: auto;*/
+    scroll-behavior: smooth;
+
+}
+
+
+/*!*Custom scrollbar*!*/
+/*.cards .scrolls::-webkit-scrollbar {*/
+/*  width: 20px;*/
+/*}*/
+
+/*.cards .scrolls::-webkit-scrollbar-track {*/
+/*  background-color: transparent;*/
+/*}*/
+
+/*.cards .scrolls::-webkit-scrollbar-thumb {*/
+/*  background-color: #d6dee1;*/
+/*  border-radius: 20px;*/
+/*  border: 6px solid transparent;*/
+/*  background-clip: content-box;*/
+/*}*/
+
+/*.cards .scrolls::-webkit-scrollbar-thumb:hover {*/
+/*  background-color: #a8bbbf;*/
+/*}*/
+
+
+.hvr-grow {
+    display: inline-block;
+    vertical-align: middle;
+    -webkit-transform: perspective(1px) translateZ(0);
+    transform: perspective(1px) translateZ(0);
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0);
+    -webkit-transition-duration: 0.3s;
+    transition-duration: 0.2s;
+    -webkit-transition-property: transform;
+    transition-property: transform;
+}
+
+.hvr-grow:hover, .hvr-grow:focus, .hvr-grow:active {
+    -webkit-transform: scale(1.1);
+    transform: scale(1.1);
+}
+
+/*div.number{*/
+/*    border-radius: 50%;*/
+/*    width: 60%;*/
+/*    height: 12.8em;*/
+/*    border: 1px solid #f20000;*/
+/*    background: red;*/
+/*}*/
+

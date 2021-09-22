@@ -1,0 +1,30 @@
+.field-user a {
+    font-weight: bold;
+}
+tbody tr{
+    cursor: pointer;
+}
+thead th{
+    background: #56e4fd7a;
+}
+tr:nth-child(even), tr:nth-child(even) .errorlist, tr:nth-child(odd) + .row-form-errors, tr:nth-child(odd) + .row-form-errors .errorlist {
+    background: #00ffbc0f;
+}
+thead th.sorted {
+    background: #f5fc2573;
+}
+table thead th .text a:focus, table thead th .text a:hover{
+    background: none;
+}
+#changelist table tbody tr.selected,table tbody tr.selected {
+    background-color: #ffb6e2;
+}
+.sortable:hover{
+    background: #c996e7b8;
+}
+
+tbody tr:hover, table tbody tr.selected:hover , #changelist table tbody tr:hover{
+    background: #729df2b5;
+    color: white;
+}
+
