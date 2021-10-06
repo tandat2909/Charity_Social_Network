@@ -75,7 +75,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         return self.queryset
 
     def get_permissions(self):
-        if self.action in ['list', 'get_comments', 'get_emotion_post','ckeditor_upload', 'retrieve', 'category',
+        if self.action in ['list', 'get_comments', 'get_emotion_post', 'ckeditor_upload', 'retrieve', 'category',
                            "get_all_image_post_user"]:
             return [permissions.AllowAny(), ]
         if self.action in ["is_post_allowed", "get_list_pending_post"]:
@@ -107,10 +107,12 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
         return PostSerializer
 
     def retrieve(self, request, *args, **kwargs):
-
+        # kiểm tra có phải bài viết của user hiện tại hay không và user admin
         if self.is_instance_of_user(request, self.get_object()) or request.user.is_superuser:
+
             return Response(self.get_serializer(self.get_object(), context={"request": request}).data,
                             status=status.HTTP_200_OK)
+        # danh cho user nặc danh và user khác xem các bài được duyệt
         if not self.get_object().is_show:
             raise rest_framework.exceptions.NotFound()
         data = self.get_serializer(self.get_object()).data.copy()
@@ -167,16 +169,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                     trả về tất cả bài viết có nội dung liên quan
         </pre>
         """
-        # print(request.query_params)
-        queryset = self.get_queryset()
-        # print(queryset.query)
-        self.pagination_class = PostPagePagination
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         # xóa bài viết của chính user đó nếu khác thì không đc
@@ -442,7 +435,7 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
                                 message=instance.__str__()
                                         + "\n Cảm ơn bạn đã Report chúng tôi sẽ xem xét "
                                           "và gửi thông báo cho bạn sớm nhất")
-        return Response(ReportPostSerializer(instance,context={"request": request}).data,
+        return Response(ReportPostSerializer(instance, context={"request": request}).data,
                         status=status.HTTP_201_CREATED)
 
     @action(methods=["PATCH"], detail=True)

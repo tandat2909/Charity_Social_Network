@@ -461,7 +461,7 @@ class ReportPostSerializer(ModelSerializer):
     class Meta(BaseMeta):
         model = ReportPost
         fields = None
-        exclude = ["active","user",]
+        exclude = ["active", "user", ]
 
 
 class ReportPostCreateSerializer(ModelSerializer):
@@ -517,3 +517,22 @@ class PostImageSerializer(ModelSerializer):
     class Meta:
         model = NewsPost
         fields = ["id", "image"]
+
+
+class TransactionSerializer(ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ["id", "amount", "buyer", "order_id", "status", "currency_code", "auction_item",
+                  "created_date","message","update_date"]
+
+
+class TransactionCreateSerializer(ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ["id", "amount", "buyer", "order_id", "status", "currency_code", "auction_item",
+                  "created_date","message","update_date"]
+
+    def validate(self, attrs):
+        if attrs.get("auction_item") is None:
+            raise ValidationError({"auction_item_id":"Không được để trống auction_item"})
+        return attrs
