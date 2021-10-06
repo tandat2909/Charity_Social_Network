@@ -7,3 +7,4 @@ from .viewcomment import CommentViewSet
 from .auctionveiw import AuctionViewSet
 from .statisticalview import StatisticalViewSet
 from .categoryview import CategoryPostViewSet
+from .paymentview import PayViewSet

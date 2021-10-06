@@ -286,3 +286,45 @@ GRAPHENE = {
     'RELAY_CONNECTION_MAX_LIMIT': 100,  # chỉ định số đối tượng lấy được trong một lần request,
     'CAMELCASE_ERRORS': False,  # tên field bị lỗi sẽ được chuyển thành chuẩn đặt tên CAMELCASE nếu được bặt lên True
 }
+
+STATUS_PAYMENT = (
+    (0, "INCOMPLETE"),
+    (1, "COMPLETED")
+)
+
+PAYPAL_SANDBOX = {
+    "PAYPAL_RECEIVED": {
+        "account": "sb-f9zc78014379@business.example.com",
+        "client_id": "ASENkuO74cB2VlJ3eGxqNpXApU9_VKytr1J7upwY-wKkJzYHaZI1iad_ruOh3n6vLFHrRFGep9Pa8tPZ",
+        "Secret": "EFNvFDngeiML8KZTgnej6ehPiAcXLvS__MOkCqqVOtySVVeSqWfwLe7PJpzueKd5vdl71KHslC0lc-ZC",
+        "BN_CODE": "FLAVORsb-f9zc78014379_MP"
+    },
+    "PAYPAL_SEND": {
+        "account": "sb-gn2zs8017135@business.example.com",
+        "client_id": "AaHwrioeIFEHAPEoGMj6kCIfpBEjiBfxVe6LGCxXs99PVExfOiXMSZYHUnNbz43Zvy5fEYNpA3E2lm_t",
+        "secret": "EBshxDCMPVTjZjeoTSG5yew04noPNPRPjFFzIIEvRN1AuZOYgB4kPg311cLmmKOJHEpqz31w2D713ZPj",
+        "BN_CODE": "FLAVORsb-f9zc78014379_MP"
+    },
+    "LINK_CHECK_ORDER": "https://api.sandbox.paypal.com/v2/checkout/orders/"
+}
+PAYPAL_PRODUCT = {
+    "PAYPAL_RECEIVED": {
+        "account": "",
+        "client_id": "",
+        "secret": "",
+        "BN_CODE": ""
+    },
+    "PAYPAL_SEND": {
+        "account": "",
+        "Client_ID": "",
+        "Secret": "",
+        "BN_CODE": ""
+    },
+    "LINK_CHECK_ORDER": "https://api.sandbox.paypal.com/v2/checkout/orders/"
+}
+
+VNPAY_RETURN_URL = 'http://localhost:8000/payment_return'  # get from config
+VNPAY_PAYMENT_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'  # get from config
+VNPAY_API_URL = 'https://sandbox.vnpayment.vn/merchant_webapi/merchant.html'
+VNPAY_TMN_CODE = '9ZONU985'  # Website ID in VNPAY System, get from config
+VNPAY_HASH_SECRET_KEY = 'KSZFRCBGQNFBEDRJLGIWEYBDVOMVVYND'  # Secret key for create checksum,get from config

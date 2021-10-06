@@ -240,19 +240,32 @@ class ReportUser(ActionBase):
 
 class Transaction(ModelBase):
     name = None
-    amount = models.IntegerField()
-    message = models.TextField()
-    provider = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='transactions')
-    order_id = models.CharField(max_length=255, null=True)
-
+    PENDING, COMPLETED = range(2)
+    status_code = settings.STATUS_PAYMENT
+    amount = models.DecimalField(max_digits=50, decimal_places=2, default=0)
+    message = models.TextField(null=True, blank=True)
+    # seller = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name='seller',
+    #                            help_text="Thông tin người bán")
+    order_id = models.CharField(max_length=255, null=True, blank=True, help_text="Có mới lưu mã hóa đơn của paypal")
+    buyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name="buyer",
+                              help_text="Thông tin người mua")
+    status = models.SmallIntegerField(choices=status_code, default=0,
+                                      help_text='Trạng thái mặc định của hóa đơn là chưa hoàn thành')
+    currency_code = models.CharField(max_length=10, null=False, blank=False, help_text="Yêu cầu nhập mã loại tiền tệ")
+    auction_item = models.ForeignKey(AuctionItem, on_delete=models.SET_NULL, null=True, help_text="Mã bài viết không được để trống")
+    created_date = models.DateTimeField()
+    update_date = models.DateTimeField()
     def __str__(self):
         return self.order_id + "-" + self.message
 
     def get_order_id(self):
         return self.order_id
 
-    def get_user(self):
-        return self.provider
+    def get_buyer(self):
+        return self.buyer
+
+    def get_seller(self):
+        return self.seller
 
 
 #
@@ -331,6 +344,7 @@ class Notification(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=False,
                              help_text="Chọn người dùng cần thông báo", related_name="notifications")
+
 
     class Meta:
         ordering = ["-created_date"]

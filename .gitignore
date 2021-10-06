@@ -131,3 +131,5 @@ dmypy.json
 /BackEnd/CharitySocialNetwork/CharitySocialNetwork/configLocal.py
 .idea/
 /BackEnd/.idea/
+/BackEnd/CharitySocialNetwork/Data/
+.idea
