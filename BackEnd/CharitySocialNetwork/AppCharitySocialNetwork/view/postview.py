@@ -534,8 +534,8 @@ class PostViewSet(BaseViewAPI, EmotionViewBase, ModelViewSet):
             # print("sssssss",file.get("secure_url",None))
             filename = file.get("public_id")
             url = file.get("secure_url")
-            retdata = {"url": url, "uploaded": "1", "fileName": filename}
-            return Response(retdata, status=status.HTTP_200_OK)
+            response_data = {"url": url, "uploaded": "1", "fileName": filename}
+            return Response(response_data, status=status.HTTP_200_OK)
         except:
             return Response({'error': "Lỗi upload file"}, status=400)
 
