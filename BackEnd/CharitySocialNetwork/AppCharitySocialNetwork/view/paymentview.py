@@ -39,7 +39,7 @@ from ..serializers import TransactionSerializer, TransactionCreateSerializer
 from ..vnpay import vnpay
 
 
-class PayViewSet(GenericViewSet, ListAPIView):
+class PayViewSet(GenericViewSet, ListAPIView, BaseViewAPI):
     queryset = Transaction.objects.filter(active=True)
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated, ]
@@ -50,7 +50,7 @@ class PayViewSet(GenericViewSet, ListAPIView):
     #     return [permissions.AllowAny()]
     def get_queryset(self):
         if self.action == "list":
-            return self.queryset.filter(buyer_id =self.request.user.pk)
+            return self.queryset.filter(auction_item__receiver_id=self.request.user.pk)
         return self.queryset
 
     @action(methods=["GET"], url_path="info-payment/(?P<auction_item_id>[a-z0-9]+)", detail=False)
@@ -61,11 +61,17 @@ class PayViewSet(GenericViewSet, ListAPIView):
         """
         # chưa kiểm tra tính hợp lệ của hóa đơn,đổi tiền tệ
         try:
-            instance_auction_item = AuctionItem.objects.get(id=auction_item_id)
+            instance_auction_item: AuctionItem = AuctionItem.objects.get(id=auction_item_id)
             # kiểm tra hóa đơn có tồn tại hay không và kiểm tra user đang đăng nhập hiện tại có phải user chiến thắng không
+            if instance_auction_item.is_paid():
+                return Response({"error": "Hóa đơn được thanh toán"})
+            # if instance_auction_item.
             if instance_auction_item.receiver.pk is not request.user.pk:
                 return Response({"error": "Xin lỗi. Bạn không phải là người chiến thắng"},
                                 status=status.HTTP_404_NOT_FOUND)
+            if Transaction.objects.filter(auction_item_id=instance_auction_item.pk).exists():
+                return Response({"error": "Hóa đơn đã được thanh toán"})
+
             if settings.DEBUG is False:
                 client_id = settings.PAYPAL_PRODUCT.get('PAYPAL_RECEIVED', None).get("client_id", None)
             else:
@@ -85,9 +91,9 @@ class PayViewSet(GenericViewSet, ListAPIView):
 
     @action(methods=["POST"], url_path="paypal/result", detail=False)
     def paypal_result(self, request, **kwargs):
-        print("data", request.data)
+        # print("data", request.data)
         result = {
-            "buyer": request.user.pk,
+            # "buyer": request.user.pk,
             "order_id": request.data.get("id", None),
             "amount": request.data.get("purchase_units", None)[0].get("amount", None).get("value", None),
             "message": request.data.get("purchase_units", None)[0].get("custom_id"),
@@ -99,7 +105,33 @@ class PayViewSet(GenericViewSet, ListAPIView):
         }
         serializer = TransactionCreateSerializer(data=result)
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
+        instance: Transaction = serializer.save()
+        # print("result", result)
+        instance.auction_item.status = AuctionItem.NOT_YET_SHIPPED
+        instance.auction_item.save()
 
-        print("result", result)
+        message_buyer = "Bạn đã thanh toán thành công sản phẩm đấu giá trong bài viết {title}." \
+                        "Sản phẩm sẽ được chuyển tới bạn sớm nhất".format(
+            title=instance.auction_item.post.title)
+        message_seller = "Người dùng {full_name} đã thanh toán sản phẩm đấu giá {title}." \
+                         "Chuyền hàng cho người mua để nhận được tiền".format(
+            full_name=request.user.get_full_name(),
+            title=instance.auction_item.post.title)
+        self.add_notification("Thanh toán thành công",
+                              user=request.user,
+                              message=message_buyer,
+                              url="order/" + str(instance.pk)
+                              )
+        self.add_notification("Người dùng đã thanh toán",
+                              user=instance.auction_item.post.user,
+                              message=message_seller
+                              )
+
+        request.user.email_user(subject="[Charity Social Network][Payment]",
+                                message=message_buyer + "\n" + instance.__str__(),
+                                )
+        instance.auction_item.post.user.email_user(subject="[Charity Social Network][Payment]",
+                                                   message=message_seller + "\n" + instance.__str__(),
+                                                   )
+        # print(instance.auction_item)
         return Response(TransactionSerializer(instance).data, status=status.HTTP_200_OK)

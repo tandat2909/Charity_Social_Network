@@ -291,7 +291,13 @@ STATUS_PAYMENT = (
     (0, "INCOMPLETE"),
     (1, "COMPLETED")
 )
-
+STATUS_AUCTION_ITEM = [
+    (0, "UNPAID"),
+    (1, "NOT YET SHIPPER"),
+    (2, "SHIPPING"),
+    (3, "SHIPPED"),
+    (4, "REFUND")
+]
 PAYPAL_SANDBOX = {
     "PAYPAL_RECEIVED": {
         "account": "sb-f9zc78014379@business.example.com",

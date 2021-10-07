@@ -522,17 +522,21 @@ class PostImageSerializer(ModelSerializer):
 class TransactionSerializer(ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ["id", "amount", "buyer", "order_id", "status", "currency_code", "auction_item",
-                  "created_date","message","update_date"]
+        fields = ["id", "amount", "order_id", "status", "currency_code", "auction_item",
+                  "created_date", "message", "update_date"]
 
 
 class TransactionCreateSerializer(ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ["id", "amount", "buyer", "order_id", "status", "currency_code", "auction_item",
-                  "created_date","message","update_date"]
+        fields = ["id", "amount", "order_id", "status", "currency_code", "auction_item",
+                  "created_date", "message", "update_date"]
 
     def validate(self, attrs):
         if attrs.get("auction_item") is None:
-            raise ValidationError({"auction_item_id":"Không được để trống auction_item"})
+            raise ValidationError({"auction_item_id": "Không được để trống auction_item"})
+        auction_item: AuctionItem = attrs.get("auction_item")
+        if auction_item.is_paid():
+            raise ValidationError(
+                {"error": "Đã được thanh toán bởi {fullname}".format(fullname=auction_item.receiver.get_full_name())})
         return attrs

@@ -81,6 +81,9 @@ class NewsPost(ModelBase):
 
 
 class AuctionItem(ModelBase):
+    UNPAID, NOT_YET_SHIPPED, SHIPPING, SHIPPED, REFUND = range(5)
+
+    status = models.SmallIntegerField(choices=settings.STATUS_AUCTION_ITEM,default=UNPAID,null=False)
     name = None
     image = None
     description = None
@@ -89,7 +92,6 @@ class AuctionItem(ModelBase):
     receiver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
                                  blank=True)
     post = models.OneToOneField(NewsPost, on_delete=models.SET_NULL, null=True, blank=True, related_name="info_auction")
-
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
 
@@ -97,7 +99,21 @@ class AuctionItem(ModelBase):
         unique_together = ('post',)
 
     def __str__(self):
-        return str(self.id)
+        return self
+
+    def is_paid(self):
+        try:
+                    # trường hợp đã ghi nhận thanh toán mà chưa chuyển trạng thái
+            return self.UNPAID == self.status and self.transaction.status == Transaction.COMPLETED \
+                    or self.status != self.UNPAID  # khác trường hợp này thì auction đã thanh toán
+        except:
+            return False
+
+    @property
+    def status_str(self):
+        if self.UNPAID == self.status and self.transaction.status == Transaction.COMPLETED:
+            return "PAID"
+        return settings.STATUS_AUCTION_ITEM[self.status][1]
 
 
 class EmotionType(ModelBase):
@@ -114,6 +130,7 @@ class ActionBase(ModelBase):
     class Meta:
         abstract = True
         ordering = ['id']
+
 
 
 class Comment(ActionBase):
@@ -247,25 +264,41 @@ class Transaction(ModelBase):
     # seller = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name='seller',
     #                            help_text="Thông tin người bán")
     order_id = models.CharField(max_length=255, null=True, blank=True, help_text="Có mới lưu mã hóa đơn của paypal")
-    buyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name="buyer",
-                              help_text="Thông tin người mua")
+    # buyer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False, related_name="buyer",
+    #                           help_text="Thông tin người mua")
     status = models.SmallIntegerField(choices=status_code, default=0,
                                       help_text='Trạng thái mặc định của hóa đơn là chưa hoàn thành')
     currency_code = models.CharField(max_length=10, null=False, blank=False, help_text="Yêu cầu nhập mã loại tiền tệ")
-    auction_item = models.ForeignKey(AuctionItem, on_delete=models.SET_NULL, null=True, help_text="Mã bài viết không được để trống")
+    auction_item = models.OneToOneField(AuctionItem, on_delete=models.SET_NULL, null=True, related_name="transaction",
+                                        help_text="Mã bài viết không được để trống")
     created_date = models.DateTimeField()
     update_date = models.DateTimeField()
+
     def __str__(self):
-        return self.order_id + "-" + self.message
+        info = "Mã hóa đơn: {order_id}\n" \
+               "Sản phẩm: {title}\n" \
+               "Giá: {amount} {currency_code}\n" \
+               "Ngày thanh toán: {created_date} \n" \
+               "Trạng thái: {status}".\
+            format(
+            order_id=self.order_id,
+            title=self.message,
+            amount= self.amount,
+            currency_code=self.currency_code,
+            created_date=self.created_date,
+            status=settings.STATUS_PAYMENT[self.status][1]
+        )
+        return info
+
 
     def get_order_id(self):
         return self.order_id
 
     def get_buyer(self):
-        return self.buyer
+        return self.auction_item.receiver
 
     def get_seller(self):
-        return self.seller
+        return self.auction_item.post.user
 
 
 #
@@ -344,7 +377,6 @@ class Notification(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=False,
                              help_text="Chọn người dùng cần thông báo", related_name="notifications")
-
 
     class Meta:
         ordering = ["-created_date"]
