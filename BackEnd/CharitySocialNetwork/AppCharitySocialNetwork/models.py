@@ -49,6 +49,10 @@ class User(AbstractUser):
     def get_url_image(self):
         return self.avatar.url
 
+    @property
+    def full_name(self):
+        return self.get_full_name()
+
 
 class NewsCategory(ModelBase):
     class Meta:
@@ -99,13 +103,11 @@ class AuctionItem(ModelBase):
         unique_together = ('post',)
 
     def __str__(self):
-        return self
+        return str(self.id) + self.post.title
 
     def is_paid(self):
         try:
-            # trường hợp đã ghi nhận thanh toán mà chưa chuyển trạng thái
-            return self.UNPAID == self.status and self.transaction.status == Transaction.COMPLETED \
-                   or self.status != self.UNPAID  # khác trường hợp này thì auction đã thanh toán
+            return self.transaction.status == Transaction.COMPLETED
         except:
             return False
 
@@ -123,6 +125,7 @@ class AuctionItem(ModelBase):
     def time_offer_of_receiver(self):
         if self.receiver is None: return None
         return HistoryAuction.objects.get(post_id=self.post.pk, user_id=self.receiver.pk).update_date
+
 
 class EmotionType(ModelBase):
     name = models.CharField(max_length=50, unique=True)
@@ -293,7 +296,7 @@ class Transaction(ModelBase):
             amount=self.amount,
             currency_code=self.currency_code,
             created_date=self.created_date,
-            status= self.status_str
+            status=self.status_str
         )
         return info
 

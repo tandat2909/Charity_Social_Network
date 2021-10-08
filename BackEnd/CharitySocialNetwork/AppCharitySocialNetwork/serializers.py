@@ -304,13 +304,15 @@ class PostCreateSerializer(ModelSerializer):
             'id': {'read_only': True},
         }
 
-    def valid_start_datetime(self, date):
+    def valid_start_datetime(self, date, **kwargs):
         # print("valid_start_datetime", date, date.timestamp(), datetime.datetime.now().timestamp(), type(date),
         #       type(datetime.datetime.now()))
-
-        if date.timestamp() >= datetime.datetime.now().timestamp():
-            return True
-        raise ValidationError({"start_date": "Ngày bắt đầu phải lớn hơn hoặc bằng ngày hiện tại"})
+        end_date: datetime.datetime = kwargs.get("end_date", None)
+        if date.timestamp() < datetime.datetime.now().timestamp():
+            raise ValidationError({"start_date": "Ngày bắt đầu phải lớn hơn hoặc bằng ngày hiện tại"})
+        if end_date is not None and date.timestamp() >= end_date.timestamp():
+            raise ValidationError({"start_date": "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc"})
+        return True
 
     def valid_end_datetime(self, date, **kwargs):
         start_datetime = kwargs.get('start_datetime', datetime.datetime.now())
@@ -379,9 +381,9 @@ class PostCreateSerializer(ModelSerializer):
                 try:
                     start_datetime = validated_data.pop("start_datetime", None)
                     end_datetime = validated_data.pop("end_datetime", None)
-
                     instance_auction_item = AuctionItem.objects.get(post=instance)
-                    if start_datetime and self.valid_start_datetime(start_datetime):
+                    if start_datetime and self.valid_start_datetime(start_datetime,
+                                                                    end_date=instance_auction_item.end_datetime):
                         instance_auction_item.start_datetime = start_datetime or instance_auction_item.start_datetime
 
                     if end_datetime and self.valid_end_datetime(start_datetime=instance_auction_item.start_datetime,
@@ -521,6 +523,7 @@ class PostImageSerializer(ModelSerializer):
 
 class TransactionSerializer(ModelSerializer):
     status = CharField(source="status_str")
+
     class Meta:
         model = Transaction
         fields = ["id", "amount", "order_id", "status", "currency_code", "auction_item",
@@ -544,14 +547,14 @@ class TransactionCreateSerializer(ModelSerializer):
 
 
 class OrderViewSerializer(ModelSerializer):
-    status = CharField(source="status_str",default="UNPAID")
+    status = CharField(source="status_str")
     image = ImageField(source="post.image")
     item = CharField(source="post.title")
     price = DecimalField(source="price_received", max_digits=50, decimal_places=2)
     time_win = DateTimeField(source="update_date")
     time_offer = DateTimeField(source="time_offer_of_receiver")
     transaction = TransactionSerializer()
-
+    author = CharField(source="post.user.full_name")
     class Meta:
         model = AuctionItem
-        fields = ["id", 'price', "status", "item", "post", "time_win", "time_offer",'image','transaction']
+        fields = ["id", 'price', "status", "item", "post",'author', "time_win", "time_offer", 'image', 'transaction']
