@@ -9,7 +9,7 @@ class Contact extends Component {
     render() {
         return (
             <div >
-                <InnerBanner></InnerBanner>
+                <InnerBanner title="Contact Us"></InnerBanner>
                 <BannerImage></BannerImage>
                 <section className="w3l-contact-7 py-5" id="contact">
                     <div className="contacts-9 py-lg-5 py-md-4">

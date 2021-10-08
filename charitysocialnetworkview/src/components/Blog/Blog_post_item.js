@@ -59,7 +59,7 @@ const BlogPostItem = (props) =>{
                             }}>{props.description}</p>
                         {/* {props.end_datetime} */}
                         {props.category.id === 1  ? <Link to={'blog_single/' + `${props.id}`} className="btn btn-primary btn-style mt-4">
-                            <Countdown title="Time remaining" value={deadline} format="D day, HH:mm:ss" /></Link> : <Link to={'blog_single/' + `${props.id}`} className="btn btn-primary btn-style mt-4">Read More</Link>}
+                            {deadline > date ? <Countdown title="Time remaining" value={deadline} format="D day, HH:mm:ss" /> : "Read More"}</Link> : <Link to={'blog_single/' + `${props.id}`} className="btn btn-primary btn-style mt-4">Read More</Link>}
                         
                     </div>
                 </div>

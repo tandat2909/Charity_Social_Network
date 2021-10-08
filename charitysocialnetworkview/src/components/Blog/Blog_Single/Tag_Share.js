@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState,useEffect } from 'react';
 import { NewsPostContextMod } from '../../../context/newspost_mod'
 import { ListEmotion } from '../../../context/emotion';
 import axios from 'axios';
@@ -42,6 +42,7 @@ const TagAndShare = () => {
     const [isModalRepost, setIsModalRepost] = useState(false);
     let [checkBoxValue, setCheckBoxValue] = useState()
     let [contentReport, setContentReport] = useState()
+    let [emotion, setEmotion] = useState([])
 
     const list = useList();
     const { TabPane } = Tabs;
@@ -81,6 +82,8 @@ const TagAndShare = () => {
         setGetEmotionSuccess(true)
     }
 
+    
+
     const postEmotion = async (id) => {
         if (context.authorization) {
             let url = 'api/newspost/' + hashTag.detail.id + '/emotions/?emotion_type=' + id
@@ -95,23 +98,45 @@ const TagAndShare = () => {
         
     }
 
-    const renderEmotion = (props = listEmotion.list) =>
-        props && props.map((emotionItem) => {
-            return (
+    const renderEmotion = (props = listEmotion.list) =>{
 
-                <Tooltip title={emotionItem.name} placement="top">
-                    <Avatar sx={{ width: 55, height: 55 }} src={emotionItem.image} onClick={() => { postEmotion(emotionItem.id) }} />
-                </Tooltip>
-            )
+        let emotion_of_user = listEmotion.emotion?.data?.filter(i => i.user.id === context.dataProfile.id)[0]
+        console.log(emotion_of_user,context.dataProfile.id)
+
+        return props && props.map((emotionItem) => {
+            if(emotionItem.id === emotion_of_user?.type){
+                return(
+                    <Tooltip title={emotionItem.name} placement="top">
+                        <Avatar sx={{ width: 60, height: 60, paddingBottom: "1.1em"}} src={emotionItem.image} onClick={() => { postEmotion(emotionItem.id) }} />
+                    </Tooltip>
+                )
+            
+            }
+            else{
+                return (
+                    <Tooltip title={emotionItem.name} placement="top">
+                        <Avatar sx={{ width: 45, height: 45 }} src={emotionItem.image} onClick={() => { postEmotion(emotionItem.id) }} />
+                    </Tooltip>
+                )
+            }
         })
+
+    }
+        
+
 
     const getEmotionOfPost = async () => {
         let url = 'api/newspost/' + hashTag.detail.id + '/get_emotion_post/'
         let a = await callApi(url, 'GET', null, null)
         listEmotion.emotion = a.data
+        setEmotion(a.data.results)
         setPostEmotionSuccess(true)
         console.log("tông: ", listEmotion.emotion.statistical.length)
     }
+
+    useEffect(() => {
+        getEmotionGroup()
+    },[emotion])
 
 
 

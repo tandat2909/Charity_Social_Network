@@ -13,7 +13,7 @@ class About extends Component {
     render() {
         return (
             <div>
-                <InnerBanner></InnerBanner>
+                <InnerBanner title="About"></InnerBanner>
                 <BannerImage></BannerImage>
                 <ALittleAbout></ALittleAbout>
                 <FactsAbout></FactsAbout>

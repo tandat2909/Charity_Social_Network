@@ -7,7 +7,7 @@ class FooterFlex extends Component{
             <div className="footers14-bottom d-flex">
                       <div className="copyright">
                           <p>© 2020 Save Poor. All rights reserved. Design by <a href="https://w3layouts.com/"
-                                  target="_blank" rel = "noreferrer">W3Layouts</a></p>
+                                  target="_blank" rel = "noreferrer">Quỳnh Quỳnh</a></p>
                       </div>
                       <div className="language-select d-flex">
                           <span className="fa fa-language" aria-hidden="true"></span>

@@ -11,18 +11,24 @@ import Contact from './components/contact/contact';
 import Logins from './components/login/login2';
 import Profile from './components/profile/profile';
 import ChatRoom from './components/chatBox/chatroom'
-// import AuthProvider from './context/authprovider';
+import AuthProvider from './context/authprovider';
 import callApi from './utils/apiCaller';
 import {contexts} from './context/context'
 import AuthorizationRequired from './components/error/error_401';
 import CausesPage from './components/Cause/causes';
 import AuctionDetail from './components/Auction/auction';
 import Statitical from './components/statitic/Statitical';
-// import AppProvider from './context/appProvider';
-// import AddRoom from './components/chatBox/AddRoom';
-// import InviteMember from './components/chatBox/inviteMember';
+import AppProvider from './context/appProvider';
+import AddRoom from './components/chatBox/AddRoom';
+import InviteMember from './components/chatBox/inviteMember';
 import Search from './components/search/search'
 import Register from './components/register/register';
+import EditPost from './components/profile/edit_post';
+import Notification from './components/notification/notification';
+import Pay from './components/paypal/pay';
+import Recerpt from './components/recerpt/recerpt';
+import List_Recerpt from './components/recerpt/list_recerpt';
+
 
 const App = () => {
   const [data, setData] = useState(false)
@@ -58,12 +64,17 @@ if(Object.keys(context.dataProfile).length === 0 && localStorage.getItem('author
         <Route path="/pages/causes" component={CausesPage}></Route>
         <Route path="/blog_posts" component={BlogPost}></Route>
         <Route path="/blog_single/:id" component={(props) => (<BlogSingle id={props} />)} ></Route>
+        <Route path="/edit_post/:id" component={(props) => (<EditPost id={props} />)} ></Route>
         <Route path="/blog/:id/auction" component={(props) => (<AuctionDetail id={props} />)}></Route>
         <Route path="/contact" component={Contact}></Route>
         <Route path="/login" component={Logins} ></Route>
         <Route path="/register" component={Register} ></Route>
         <Route path="/search" component={Search} ></Route>
         <Route path="/statistic" component={Statitical} ></Route>
+        <Route path="/notification" component={Notification} ></Route>
+        <Route path="/list_recerpt" component={List_Recerpt} ></Route>
+        <Route path="/recerpt/:id" component={(props) => (<Recerpt id={props} />)} ></Route>
+        <Route path="/pay" component={Pay} ></Route>
         <Route path="/chat" component={ChatRoom}></Route>
         {context.authorization === true ?
           <Switch>
@@ -80,8 +91,8 @@ if(Object.keys(context.dataProfile).length === 0 && localStorage.getItem('author
       </Switch>
       <WebsiteFooter />
       {/* <InviteMember />
-      <AddRoom /> */}
-      {/* </AppProvider>
+      <AddRoom />
+      </AppProvider>
       </AuthProvider> */}
     </Router>
 

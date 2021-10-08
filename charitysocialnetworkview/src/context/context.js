@@ -5,6 +5,7 @@ export const contexts = React.createContext({
     dataProfile: {},
     dataNotification: {},
     authorization: false,
-    imagePost:[]
+    imagePost:[],
+    imagePostAll:[]
 });
 

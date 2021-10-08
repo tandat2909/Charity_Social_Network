@@ -5,22 +5,22 @@ const data = {
   labels: ['1', '2', '3', '4', '5', '6'],
   datasets: [
     {
-      label: '# of Red Votes',
+      label: 'No Auction',
       data: [12, 19, 3, 5, 2, 3],
       backgroundColor: 'rgb(255, 99, 132)',
     },
     {
-      label: '# of Blue Votes',
+      label: 'Auction',
       data: [2, 3, 20, 5, 1, 4],
       backgroundColor: 'rgb(54, 162, 235)',
     },
     {
-      label: '# of Green Votes',
+      label: 'The post has been approved',
       data: [3, 10, 13, 15, 22, 30],
       backgroundColor: 'rgb(75, 192, 192)',
     },
     {
-        label: '# of quynh Votes',
+        label: 'The post has not been approved',
         data: [3, 10, 13, 15, 22, 30],
         backgroundColor: 'rgb(245, 245, 89)',
       },
@@ -42,7 +42,7 @@ const options = {
 const GroupedBar = () => (
   <>
     <div className='header'>
-      <h1 className='title'>Grouped Bar Chart</h1>
+      <h1 className='title'>Post type statistics by month</h1>
     </div>
     <Bar data={data} options={options} />
   </>

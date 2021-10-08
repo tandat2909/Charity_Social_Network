@@ -6,11 +6,13 @@ import "antd/dist/antd.css";
 import { contexts } from '../../context/context'
 import dateFormat from 'dateformat';
 import Dialog from '@material-ui/core/Dialog';
+import MenuItem from '@mui/material/MenuItem';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import callApi from '../../utils/apiCaller';
+import { Link } from 'react-router-dom';
 
 export default function ShowMessage() {
   let dataMess = useContext(contexts)
@@ -30,7 +32,7 @@ export default function ShowMessage() {
             onClick={() => {OpenDialog(item.id)}}
           >
             <Badge.Ribbon text={item.new === true ? "new" : "old"} color={item.new === true ? "green" : "purple"}>
-              <Card title={item.title} size="small" >
+              <Card type="inner" title={item.title} size="small" >
                 <span style={{
                             whiteSpace: "pre-wrap", 
                             textOverflow: "ellipsis", 
@@ -91,6 +93,7 @@ export default function ShowMessage() {
 
   const menu = (
     <Menu style={{ width: "320px", height: "400px", overflowY: "scroll"}}>
+      <MenuItem> <Link to='/notification' className="blog-desc-big">See all notifications</Link></MenuItem>
       {Notification()}
     </Menu>
   );
@@ -98,11 +101,10 @@ export default function ShowMessage() {
   return (
     <div style={{ margin: "20px 10px" }}>
       <Dropdown overlay={menu} placement="bottomCenter" arrow>
-        <Badge color="secondary" count={dataMess.dataNotification.count} overflowCount={1} showZero>
+        <Badge color="secondary" count={dataMess.dataNotification.count} overflowCount={10} showZero>
           <NotificationsActiveIcon color="secondary" style={{ fontSize: 30, color: "blue" }} />
         </Badge>
       </Dropdown>
-        
         <Dialog open={open} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">{mess.title}</DialogTitle>
         <DialogContent>

@@ -69,7 +69,7 @@ const BlogPost = () => {
     return (
 
         <div style={{backgroundColor: "#f8f9fa"}}>
-            <InnerBanner></InnerBanner>
+            <InnerBanner title="Latest Updates"></InnerBanner>
             <BannerImage></BannerImage>
             <section className="w3l-blogblock py-5">
                 <div className="container pt-lg-4 pt-md-3">

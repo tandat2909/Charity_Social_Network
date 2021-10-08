@@ -37,9 +37,9 @@ const Form = () => {
         else{
             history.replace("/login")
         }
-            
-        
     }
+
+    
         return (
             <div>
                 <div className="form-group">

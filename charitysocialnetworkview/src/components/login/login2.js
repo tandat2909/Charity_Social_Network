@@ -149,9 +149,24 @@ const Logins = (props) => {
                                     </div >
                                     <p className="w-100 text-center">&mdash; Or Sign In With &mdash;</p>
                                     <div className="social d-flex text-center">
-                                        <a className="login" href="/#" className="px-2 py-2 ml-md-1 rounded" onClick={handleFBLogin}><span className="ion-logo-twitter mr-2"></span> Facebook</a>
+                                        <button style={{
+                                            width: "40%",
+                                            padding: "10px",
+                                            backgroundColor: "rgb(0 0 0 / 77%)",
+                                            border: "1px",
+                                            borderRadius: "6px",
+                                            margin:" 0 12px"
+                                        }}
+                                        ><span className="ion-logo-twitter mr-2" onClick={handleFBLogin}> Facebook</span></button>
                                         
-                                        <a className="login" href="#/" className="px-2 py-2 ml-md-1 rounded"><span className="ion-logo-twitter mr-2"></span> Twitter</a>
+                                        <button style={{
+                                            width: "40%",
+                                            padding: "10px",
+                                            backgroundColor: "rgb(0 0 0 / 77%)",
+                                            border: "1px",
+                                            borderRadius: "6px",
+                                            margin:" 0 12px"
+                                        }}><span className="ion-logo-twitter mr-2"></span> Twitter</button>
                                     </div>
                                 </div>
                             </div>

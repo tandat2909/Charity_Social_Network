@@ -13,8 +13,12 @@ const WebsiteFooter = props => {
 };
 
 
-class Footer extends Component{
-    render() {
+const Footer = () =>{
+
+    const topFunction = () =>{
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+    }
         return(
             <div className="w3l-footer-main">
                 <div className="w3l-sub-footer-content">
@@ -28,7 +32,7 @@ class Footer extends Component{
                             </div>
                         </div>
                         
-                        <button  id="movetop" title="Go to top">
+                        <button  id="movetop" onClick={topFunction} title="Go to top">
                             &uarr;
                         </button>
                         
@@ -39,6 +43,6 @@ class Footer extends Component{
                 </div>
             </div>
         )
-    }
+    
 }
 export default withRouter(WebsiteFooter);

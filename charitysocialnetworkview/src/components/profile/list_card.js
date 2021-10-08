@@ -9,7 +9,7 @@ import {
     MoreVert, Message, Share, 
 }
     from '@material-ui/icons';
-// import ListEmoji from './list_emoji'
+import ListEmoji from './list_emoji'
 import { contexts } from "../../context/context"
 import callApi from '../../utils/apiCaller';
 import { Link } from 'react-router-dom';
@@ -104,7 +104,7 @@ const ListCard = (props) => {
                 </CardContent>
 
                 <CardContent style={{ display: "flex", borderTop: "1px solid gray", borderBottom: "1px solid gray" }}>
-                    {/* <ListEmoji ></ListEmoji> */}
+                    <ListEmoji ></ListEmoji>
                     <IconButton aria-label="share">
                         <Share />Share
                     </IconButton>
@@ -141,7 +141,7 @@ const ListCard = (props) => {
                 onClose={handleCloseMenu}
             >
                 <MenuItem><Link to={'blog_single/' + `${props.id}`}>Detail</Link></MenuItem>
-                <MenuItem onClick={handleCloseMenu}>Update</MenuItem>
+                <MenuItem><Link to={'edit_post/' + `${props.id}`}>Update</Link></MenuItem>
                 <MenuItem onClick={() => {deletePost(props.id)}}>Delete</MenuItem>
             </Menu>
         </>

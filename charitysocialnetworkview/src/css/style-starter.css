@@ -11903,3 +11903,27 @@ a.team-title span.fa {
 button.MuiButtonBase-root.MuiFab-root.MuiSpeedDial-fab.MuiFab-primary{
   margin: 0 auto;
 }
+
+
+
+::-webkit-scrollbar {
+
+width: 10px; height:10px;
+
+}
+
+::-webkit-scrollbar-track {
+
+-webkit-box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.3);
+
+background:#fff;
+
+}
+
+::-webkit-scrollbar-thumb {
+
+background: #ff5200;
+
+-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0);
+
+}

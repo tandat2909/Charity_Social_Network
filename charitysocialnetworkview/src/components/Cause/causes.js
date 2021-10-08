@@ -12,7 +12,7 @@ const CausesPage = () => {
     const [reload, setReload] = useState(false)
     const getPostMod =  async() =>{
         let a = await callApi('api/accounts/is-user-mod/', 'GET', null, null)
-        let p = await callApi('api/newspost/list_pending_post/', 'GET', null, null)
+        let p = await callApi('api/newspost/list_pending_post/?page_size=6', 'GET', null, null)
         post.isUserMod = a.data.usermod
         post.results = p.data.results
         setReload(true)

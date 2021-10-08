@@ -116,7 +116,7 @@ const NavItem = () => {
             </MenuLink>
 
 
-            <MenuLinkS label="Pages" to="/pages" className='dropdown' data_toggle='dropdown' activeOnlyWhenExact={false}>
+            <MenuLinkS label="Pages" to="/pages/causes" className='dropdown' data_toggle='dropdown' activeOnlyWhenExact={false}>
                 <DropDownMenu className=''>
                     <NavLink className="dropdown-item " to="/pages/causes">Causes</NavLink>
                     <NavLink className="dropdown-item " to="/pages/donate">Donate Now</NavLink>

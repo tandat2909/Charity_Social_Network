@@ -18,7 +18,7 @@ export default function AuthProvider({ children }){
                 const{ displayName, email, uid, photoURL } = data 
                 setUser({ displayName, email, uid, photoURL })
                 setIsloading(false)
-                // history.replace("/")
+                // history.replace("/chat")
                 return;
             }
             setIsloading(false)
@@ -35,7 +35,7 @@ export default function AuthProvider({ children }){
 
     return(
         <AuthContext.Provider value={{ user }}>
-        {isloading ? <Spin style={{ position: 'fixed', inset: 0 }} /> : children}
+        {isloading ? <Spin tip="Loading..." size="large" style={{ position: 'fixed', inset: 0 , top: "50%", left: "10%"}} /> : children}
       </AuthContext.Provider>
     );
 }

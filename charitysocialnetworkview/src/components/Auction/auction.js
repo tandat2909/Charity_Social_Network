@@ -208,7 +208,7 @@ const AuctionDetail = (props) => {
     console.log("bai: ", detailPost.detail)
     return (
         <>
-            <InnerBanner></InnerBanner>
+            <InnerBanner title="Auction"></InnerBanner>
             <BannerImage></BannerImage>
             {Object.keys(detailPost.detail).length !== 0 ?
                 <Grid container>
@@ -270,7 +270,7 @@ const AuctionDetail = (props) => {
                             </div>
                         </Paper>
                         {detailPost.detail.historyauction.length > 0  || loadAlert === true ? 
-                            <Alert message={'Bạn đã offer cho bài viết này với giá ' + `${detailPost.detail.historyauction[0].price}` }type="info" showIcon style={{margin: 5}} closable
+                            <Alert message={'Bạn đã offer cho bài viết này với giá '  }type="info" showIcon style={{margin: 5}} closable
                                 action={
                                     <Button size="small" type="primary" onClick={() => {setShowButton(true); setIsModalVisible(true)}}>
                                         Offer Againt

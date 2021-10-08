@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import CommentParrent from './comment_parrent'
 import {NewsPostContextMod} from "../../../../context/newspost_mod"
 import axios from 'axios';
@@ -7,26 +7,35 @@ import moment from 'moment';
 
 
 
-const Comment = () =>  {
+const Comment = (props) =>  {
     let commentParrent = useContext(NewsPostContextMod)
     let [get_comment_success, setGetCommentSuccess] = useState(false)
+
+    // let [array, setArray] = useState(false)
     const CommentParrents = async() => {
         let url = 'http://127.0.0.1:8000/api/newspost/' + commentParrent.detail.id + '/comments/'
         let a = await axios({
             method: "GET",
             url: url
         }).catch(err => { console.log(err) })
-        console.log(a)
+        // console.log(a)
+        // setArray(true)
         commentParrent.comment = a.data
         setGetCommentSuccess(true)
-        console.log(url)
+        // console.log(url)
         
     }
+    
+    // console.log("props: ", props.postComment)
+    // useEffect(() => {
+    //     CommentParrents()
+    // },[props.postComment])
+
     if(Object.keys(commentParrent.comment).length === 0){
         CommentParrents()
     }
     
-    console.log("comment: ",commentParrent.comment)
+    // console.log("comment: ",commentParrent.comment)
     
     
     const ShowComment = (props = commentParrent.comment) => 

@@ -12,7 +12,6 @@ const BlogSingle = (props) => {
     // let url = 'http://localhost:8000/api/newspost/' + props.id.match.params.id + '/'
     const GetDetailPost = async () => {
         let url = 'api/newspost/' + props.id.match.params.id + '/'
-        // console.log(url)
         let a =  await callApi(url, 'GET', null, null).catch(err => { console.log(err) })
         console.log(a)
         detailPost.detail = a.data
@@ -31,7 +30,7 @@ const BlogSingle = (props) => {
 
     return (
         <div>
-            <InnerBanner></InnerBanner>
+            <InnerBanner title="Single post"></InnerBanner>
             <BannerImage></BannerImage>
             {Object.keys(detailPost.detail).length !== 0 ?
                 <>

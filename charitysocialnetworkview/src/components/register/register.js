@@ -99,6 +99,8 @@ const Register = () => {
 
     const [errors, setErrors] = useState({});
 
+    let [messages, setMessages] = useState();
+
     const validate = (fieldValues = profile) =>{
         let temp = { ...errors }
         if('username' in fieldValues) 
@@ -199,7 +201,13 @@ const Register = () => {
             history.replace("/login")
           }
     
-        }).catch(err => {console.log(err.response)})
+        }).catch(err => {console.log(err.response.data)
+            if(err.response.data.username)
+            {
+                setMessages("username đã tồn tại")
+            }
+        
+        })
     }
       };
     
@@ -210,7 +218,7 @@ const Register = () => {
                     <div className="container" style={{width: "50%"}}>
                     <p style={{textAlign: "center", padding: "20px 0", color: "orange", fontSize: "50px"}}>Save Poor</p>
                             <h2 style={{textAlign: "center", padding: "20px 0", color: "#e4195e"}}>Register Here</h2>
-
+                            {messages ? <Alert severity="error">{messages}</Alert> : ""}
                             {showAlert === true ? <Alert severity="error">mật khẩu chưa đúng</Alert> : ""}
                         <div style={{width: "100%", padding: "30px ", backgroundColor:"#544f4f6b", borderRadius: "30px"}}>
                             
@@ -334,13 +342,13 @@ const Register = () => {
                                 error={errors.gender}
                                 helperText={errors.gender ? errors.gender : null}
                             >
-                                <MenuItem value="">
-                                    <em>Orther</em>
+                                <MenuItem key={0} value="other">
+                                    Orther
                                 </MenuItem>
                                 <MenuItem key={1} value='women' >
                                     Women
                                 </MenuItem>
-                                <MenuItem key={2} value='men' >
+                                <MenuItem key={2} value='man' >
                                     Men
                                 </MenuItem>
                             </ValidationTextField>

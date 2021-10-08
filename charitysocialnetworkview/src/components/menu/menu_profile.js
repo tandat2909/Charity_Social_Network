@@ -202,6 +202,7 @@ const handleChange = (event) => {
         <MenuItem onClick={OpenDialog}>Change Password</MenuItem>
         <MenuItem><Link to="/statistic">Statistic</Link></MenuItem>
         <MenuItem onClick={logout}>Logout</MenuItem>
+        <MenuItem >pay</MenuItem>
       </Menu>
 
       {/* 
