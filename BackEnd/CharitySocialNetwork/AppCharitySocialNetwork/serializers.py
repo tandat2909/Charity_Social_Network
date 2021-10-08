@@ -520,6 +520,7 @@ class PostImageSerializer(ModelSerializer):
 
 
 class TransactionSerializer(ModelSerializer):
+    status = CharField(source="status_str")
     class Meta:
         model = Transaction
         fields = ["id", "amount", "order_id", "status", "currency_code", "auction_item",
@@ -540,3 +541,17 @@ class TransactionCreateSerializer(ModelSerializer):
             raise ValidationError(
                 {"error": "Đã được thanh toán bởi {fullname}".format(fullname=auction_item.receiver.get_full_name())})
         return attrs
+
+
+class OrderViewSerializer(ModelSerializer):
+    status = CharField(source="status_str",default="UNPAID")
+    image = ImageField(source="post.image")
+    item = CharField(source="post.title")
+    price = DecimalField(source="price_received", max_digits=50, decimal_places=2)
+    time_win = DateTimeField(source="update_date")
+    time_offer = DateTimeField(source="time_offer_of_receiver")
+    transaction = TransactionSerializer()
+
+    class Meta:
+        model = AuctionItem
+        fields = ["id", 'price', "status", "item", "post", "time_win", "time_offer",'image','transaction']

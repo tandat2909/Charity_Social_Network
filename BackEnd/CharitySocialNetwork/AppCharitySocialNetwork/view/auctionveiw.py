@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from ..models import AuctionItem
-from ..serializers import AuctionItemSerializer, AuctionItemViewSerializer
+from ..serializers import AuctionItemSerializer, AuctionItemViewSerializer, OrderViewSerializer
 from ..view.baseview import BaseViewAPI
 from rest_framework.viewsets import *
 from rest_framework.generics import *
@@ -41,7 +41,6 @@ class AuctionViewSet(BaseViewAPI, GenericViewSet, RetrieveAPIView):
             if instance_auction.status is not AuctionItem.NOT_YET_SHIPPED:
                 return Response({"error": "Hóa đơn đã được xác nhận"}, status=status.HTTP_400_BAD_REQUEST)
 
-
             # khi chủ bài viết nhấn xác nhận đã gửi hàng
             instance_auction.status = AuctionItem.SHIPPING
             # print(instance_auction.status,AuctionItem.SHIPPING)
@@ -77,9 +76,9 @@ class AuctionViewSet(BaseViewAPI, GenericViewSet, RetrieveAPIView):
         instance_auction_item: AuctionItem = self.get_object()
         if request.user.pk == instance_auction_item.receiver.pk:
             if instance_auction_item.status is AuctionItem.NOT_YET_SHIPPED:
-                return Response({"error": "Đơn hàng chưa được vận chuyển"},status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Đơn hàng chưa được vận chuyển"}, status.HTTP_400_BAD_REQUEST)
             if instance_auction_item.status is AuctionItem.SHIPPED:
-                return Response({"error": "Đơn hàng đã nhận"},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Đơn hàng đã nhận"}, status=status.HTTP_400_BAD_REQUEST)
             instance_auction_item.status = AuctionItem.SHIPPED
             instance_auction_item.save()
             self.add_notification("Xác nhận đơn hàng",
@@ -95,6 +94,11 @@ class AuctionViewSet(BaseViewAPI, GenericViewSet, RetrieveAPIView):
             instance_auction_item.post.user.email_user(subject="[Charity Social Network][Shipped]", message=message
                                                        )
 
-            return Response({"success": "Xác nhận thành công"},status.HTTP_200_OK)
+            return Response({"success": "Xác nhận thành công"}, status.HTTP_200_OK)
 
         raise rest_framework.exceptions.PermissionDenied()
+
+    @action(methods=["GET"], detail=False, url_path="order")
+    def order(self, request, **kwargs):
+        orders_of_user = request.user.auctionitem_set.all()
+        return Response(OrderViewSerializer(orders_of_user, many=True).data, status=status.HTTP_200_OK)
