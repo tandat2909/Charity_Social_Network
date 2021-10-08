@@ -83,7 +83,7 @@ class NewsPost(ModelBase):
 class AuctionItem(ModelBase):
     UNPAID, NOT_YET_SHIPPED, SHIPPING, SHIPPED, REFUND = range(5)
 
-    status = models.SmallIntegerField(choices=settings.STATUS_AUCTION_ITEM,default=UNPAID,null=False)
+    status = models.SmallIntegerField(choices=settings.STATUS_AUCTION_ITEM, default=UNPAID, null=False)
     name = None
     image = None
     description = None
@@ -103,18 +103,26 @@ class AuctionItem(ModelBase):
 
     def is_paid(self):
         try:
-                    # trường hợp đã ghi nhận thanh toán mà chưa chuyển trạng thái
+            # trường hợp đã ghi nhận thanh toán mà chưa chuyển trạng thái
             return self.UNPAID == self.status and self.transaction.status == Transaction.COMPLETED \
-                    or self.status != self.UNPAID  # khác trường hợp này thì auction đã thanh toán
+                   or self.status != self.UNPAID  # khác trường hợp này thì auction đã thanh toán
         except:
             return False
 
     @property
     def status_str(self):
-        if self.UNPAID == self.status and self.transaction.status == Transaction.COMPLETED:
-            return "PAID"
+        # print(self.status,settings.STATUS_AUCTION_ITEM,settings.STATUS_AUCTION_ITEM[0][1],self.status == self.UNPAID)
+        try:
+            if self.UNPAID == self.status and self.transaction.status == Transaction.COMPLETED:
+                return "PAID"
+        except:
+            pass
         return settings.STATUS_AUCTION_ITEM[self.status][1]
 
+    @property
+    def time_offer_of_receiver(self):
+        if self.receiver is None: return None
+        return HistoryAuction.objects.get(post_id=self.post.pk, user_id=self.receiver.pk).update_date
 
 class EmotionType(ModelBase):
     name = models.CharField(max_length=50, unique=True)
@@ -130,7 +138,6 @@ class ActionBase(ModelBase):
     class Meta:
         abstract = True
         ordering = ['id']
-
 
 
 class Comment(ActionBase):
@@ -279,17 +286,16 @@ class Transaction(ModelBase):
                "Sản phẩm: {title}\n" \
                "Giá: {amount} {currency_code}\n" \
                "Ngày thanh toán: {created_date} \n" \
-               "Trạng thái: {status}".\
+               "Trạng thái: {status}". \
             format(
             order_id=self.order_id,
             title=self.message,
-            amount= self.amount,
+            amount=self.amount,
             currency_code=self.currency_code,
             created_date=self.created_date,
-            status=settings.STATUS_PAYMENT[self.status][1]
+            status= self.status_str
         )
         return info
-
 
     def get_order_id(self):
         return self.order_id
@@ -299,6 +305,10 @@ class Transaction(ModelBase):
 
     def get_seller(self):
         return self.auction_item.post.user
+
+    @property
+    def status_str(self):
+        return settings.STATUS_PAYMENT[self.status][1]
 
 
 #
