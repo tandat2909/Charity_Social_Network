@@ -45,7 +45,7 @@ const Pay = () =>{
 //     }
 //   }, [data, setData])
   let render = () =>
-    data === undefined ? <></> : <PayPalScriptProvider options={{ "client-id": "ASENkuO74cB2VlJ3eGxqNpXApU9_VKytr1J7upwY-wKkJzYHaZI1iad_ruOh3n6vLFHrRFGep9Pa8tPZ" }}>
+    data === undefined ? <></> : <PayPalScriptProvider options={{ "client-id": "AVH5Y-MbuPj2BhIGTqye7D9GBip0PDfYVSOn87AVZUx4VVJ88CVxgrCOkcCERyWsF2nAnsrqKOpwrgVv" }}>
       {/* {console.log(data.client_id)} */}
 
       {/* <Toaster position="top-center" /> */}

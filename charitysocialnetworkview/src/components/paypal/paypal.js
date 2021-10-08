@@ -1,6 +1,7 @@
 import React from 'react';
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import axios from "axios";
+import callApi from '../../utils/apiCaller';
 // import toast from "react-hot-toast";
 
 
@@ -31,16 +32,9 @@ const PayPal = (props) => {
                             console.log(details)
                             alert("You winner")
                             // toast.success('Payment completed. Thank you, ' + details.payer.name.given_name + ' ' +details.payer.name.surname)
-                            let auction_item_id = 2
-                            // axios({
-                            //     method:"POST",
-                            //     url: "http://localhost:8000/api/pay/paypal/result/",
-                            //     headers: {
-                            //       Authorization: "Bearer UaUKZZu23LQCneJTPtItcaScI56Gif"
-                            //     },
-                            //     data:{...details, auction_item_id:auction_item_id}
-                                
-                            // })
+                            let data = {...details, auction_item_id: props.auction_item_id}
+                            let a =  callApi("api/pay/paypal/result/", 'POST', data, null)
+                         
 
                         });
                     }}
