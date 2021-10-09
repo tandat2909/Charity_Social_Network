@@ -67,6 +67,7 @@ const Recerpt = (props) => {
 
     const PayMent = () =>
         list.listRecerpt && list.listRecerpt.filter(d => d.id === parseInt(props.id.match.params.id)).map(res => {
+            list.detailRecerpt= res
             const rows = [
                 createRow(res.item, 1, res.price),
             ];

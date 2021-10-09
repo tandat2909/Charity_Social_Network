@@ -1,20 +1,22 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import { PayPalButtons } from "@paypal/react-paypal-js";
-import axios from "axios";
+// import axios from "axios";
 import callApi from '../../utils/apiCaller';
+import { recerpt } from '../../context/recerpt';
 // import toast from "react-hot-toast";
 
 
-const PayPal = (props) => {
+const PayPal = (props) => { 
+    let detail = useContext(recerpt)
     console.log("pays   : ", props)
     let payloads = props.payload
     return (
         <div className="card">
             <img src="https://images.unsplash.com/photo-1594498257673-9f36b767286c?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1350&q=80" alt="Airtable product" style={{ width: '100%' }} />
             <div className="card-details">
-                <h1>Airtable Product</h1>
+                <h5>{detail.detailRecerpt.item}</h5>
                 <p className="price">$ {payloads.amount.value}</p>
-                <p>Some information about the product</p>
+                <p>dfghj</p>
                 <PayPalButtons
                     style={{ layout: "horizontal" }}
                     createOrder={(data, actions) => {
