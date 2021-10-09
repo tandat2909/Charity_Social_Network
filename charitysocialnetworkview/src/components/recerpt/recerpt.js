@@ -74,6 +74,15 @@ const Recerpt = (props) => {
             const invoiceSubtotal = subtotal(rows);
 
             return (
+                <>
+                {/* {res.transaction !== null  ? 
+                    <Paper className={classes.paper} elevation={3}>
+                        <p>mã hóa đơn: </p>
+                        <p>tiền đã trả: </p>
+                        <p>thanh toán cho</p>
+                        <p>ngày thanh toán</p>
+                    </Paper>
+                    : ""} */}
                 <Paper className={classes.paper} elevation={3}>
                     <TableContainer>
                         <Table aria-label="spanning table">
@@ -82,7 +91,7 @@ const Recerpt = (props) => {
                                     <TableCell align="left" colSpan={2} sx={{ color: "blue" }}>
                                         {res.item}
                                     </TableCell>
-                                    <TableCell align="right" colSpan={2}>chủ bài viết</TableCell>
+                                    <TableCell align="right" colSpan={2}>{res.author}</TableCell>
                                 </TableRow>
                                 <TableRow >
                                     <TableCell >Product</TableCell>
@@ -120,15 +129,20 @@ const Recerpt = (props) => {
                                 </TableRow>
 
                                 <TableRow>
+                                    {res.transaction !== null ? 
+                                    <TableCell colSpan={4} align="right">
+                                        <button className="btn btn-style btn-primary ml-lg-3 mr-lg-2" style={{backgroundColor: "red"}}> Đã thanh toán</button>
+                                    </TableCell> : 
                                     <TableCell colSpan={4} align="right">
                                         <button className="btn btn-style btn-primary ml-lg-3 mr-lg-2" onClick={() => { setShowPayMent(true) }}>Thanh toán</button>
                                     </TableCell>
-
+                                    }
                                 </TableRow>
                             </TableBody>
                         </Table>
                     </TableContainer>
                 </Paper>
+                </>
             )
         }
         )
@@ -167,6 +181,8 @@ const Recerpt = (props) => {
                         <div style={{ padding: "0 20px", color: "gray" }}>Thay đổi</div>
                     </div>
                 </Paper>
+
+                
                 {PayMent()}
                 {showPayMent === true ?
                     <Paper className={classes.paper} elevation={3}>

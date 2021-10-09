@@ -16,7 +16,7 @@ const PayPal = (props) => {
             <div className="card-details">
                 <h5>{detail.detailRecerpt.item}</h5>
                 <p className="price">$ {payloads.amount.value}</p>
-                <p>dfghj</p>
+                <p>{detail.detailRecerpt.author}</p>
                 <PayPalButtons
                     style={{ layout: "horizontal" }}
                     createOrder={(data, actions) => {

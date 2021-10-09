@@ -48,7 +48,7 @@ const Statitical = () => {
                                 <div className={classes.tong}>
                                     <Avatar className={classes.large} style={{backgroundColor: "#2d9898"}}><Gavel /></Avatar>
                                 </div>
-                                <h2 className={classes.tong}>30 Bài</h2>
+                                <h2 className={classes.tong}>3 Bài</h2>
                                 <h5 className={classes.tong}>Auction</h5>
                             </div>
                         </Paper>
@@ -59,7 +59,7 @@ const Statitical = () => {
                                 <div className={classes.tong}>
                                     <Avatar className={classes.large} style={{backgroundColor: "#e8bd39"}}><EventNote /></Avatar>
                                 </div>
-                                <h2 className={classes.tong}>30 Bài</h2>
+                                <h2 className={classes.tong}>10 Bài</h2>
                                 <h5 className={classes.tong}>No auction</h5>
                             </div>
                         </Paper>
@@ -70,8 +70,8 @@ const Statitical = () => {
                                 <div className={classes.tong}>
                                     <Avatar className={classes.large} style={{backgroundColor: "#4caf50"}}><EventAvailable /></Avatar>
                                 </div>
-                                <h2 className={classes.tong}>30 Bài</h2>
-                                <h5 className={classes.tong}>Approved</h5>
+                                <h2 className={classes.tong}>3 emtions</h2>
+                                <h5 className={classes.tong}>emtions</h5>
                             </div>
                         </Paper>
                     </Grid>
@@ -81,8 +81,8 @@ const Statitical = () => {
                                 <div className={classes.tong}>
                                     <Avatar className={classes.large} style={{backgroundColor: "#e91e6382"}}><EventBusy /></Avatar>
                                 </div>
-                                <h2 className={classes.tong}>30 Bài</h2>
-                                <h5 className={classes.tong}>not approved yet</h5>
+                                <h2 className={classes.tong}>25 comments</h2>
+                                <h5 className={classes.tong}>comments</h5>
                             </div>
                         </Paper>
                     </Grid>
@@ -99,11 +99,11 @@ const Statitical = () => {
                 </Grid>
                 <Grid container spacing={3}>
 
-                    <Grid item xs={12} sm={5}>
-                        <Paper className={classes.paper}><Polar></Polar></Paper>
-                    </Grid>
                     <Grid item xs={12} sm={7}>
                         <Paper className={classes.paper}><Crazy></Crazy></Paper>
+                    </Grid>
+                    <Grid item xs={12} sm={5}>
+                        <Paper className={classes.paper}><Polar></Polar></Paper>
                     </Grid>
                 </Grid>
 

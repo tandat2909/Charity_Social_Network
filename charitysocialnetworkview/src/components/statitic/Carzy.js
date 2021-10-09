@@ -4,29 +4,29 @@ import { Bar } from 'react-chartjs-2';
 const rand = () => Math.floor(Math.random() * 255);
 
 const genData = () => ({
-  labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+  labels: ['9', '10'],
   datasets: [
     {
       type: 'line',
-      label: 'Dataset 1',
+      label: 'posts',
       borderColor: `rgb(${rand()}, ${rand()}, ${rand()})`,
       borderWidth: 2,
       fill: false,
-      data: [rand(), rand(), rand(), rand(), rand(), rand()],
+      data: [4, 6],
     },
     {
       type: 'bar',
-      label: 'Dataset 2',
+      label: 'emotions',
       backgroundColor: `rgb(${rand()}, ${rand()}, ${rand()})`,
-      data: [rand(), rand(), rand(), rand(), rand(), rand(), rand()],
+      data: [0,0],
       borderColor: 'white',
       borderWidth: 2,
     },
     {
       type: 'bar',
-      label: 'Dataset 3',
+      label: 'comment',
       backgroundColor: `rgb(${rand()}, ${rand()}, ${rand()})`,
-      data: [rand(), rand(), rand(), rand(), rand(), rand(), rand()],
+      data: [0,0],
     },
   ],
 });
