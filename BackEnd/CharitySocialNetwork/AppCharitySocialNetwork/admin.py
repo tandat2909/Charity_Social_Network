@@ -75,7 +75,7 @@ class CustomAdminSite(admin.AdminSite):
         return request.user.is_active and request.user.is_superuser
 
     def get_statistical_category_post(self, *args, **kwargs):
-        sta = NewsCategory.objects.annotate(post_count=Count("post")). \
+        sta = NewsCategory.objects.annotate(post_count=Count("posts")). \
             all().values_list(*args, "post_count")
         return sta
 
