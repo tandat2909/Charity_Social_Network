@@ -39,8 +39,8 @@ class StatisticalViewSet(GenericViewSet):
                     "id": c.id,
                     "name": c.name
                 },
-                "total": c.posts.count(),
-                "data": self.get_statistical_month_have_post_by_year(queryset=queryset)
+                "total": c.posts.filter(created_date__year=int(year), user_id=request.user.pk).count(),
+                "data": self.get_statistical_month_have_post_by_year(queryset=queryset, year=int(year))
             })
 
         return Response(data, status=status.HTTP_200_OK)
