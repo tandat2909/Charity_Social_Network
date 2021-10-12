@@ -7,6 +7,9 @@ import { makeStyles } from '@material-ui/core/styles';
 import {Paper, Grid, Avatar} from '@material-ui/core';
 import {EventBusy, EventNote, Gavel, EventAvailable} from '@material-ui/icons';
 import callApi from '../../utils/apiCaller';
+import moment from 'moment';
+import { statistical } from '../../context/statistical';
+
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -31,13 +34,25 @@ const useStyles = makeStyles((theme) => ({
 
 const Statitical = () => {
     const classes = useStyles();
-    // const totalStaticial = async() => {
-    //     let au =  await callApi("api/newspost/user/?category=1", 'GET', null, null)
-    //     // const noAuction = await callApi("api/newspost/user/?category=2", 'GET', null, null)
-    //     aution = au.data.count
-    // }
-    // totalStaticial()
-   
+    let thong = useContext(statistical);
+    const totalStaticial = async() => {
+        let year = moment().format('YYYY')
+        let url = "api/statistical/post/"+ year + "/"
+        let au =  await callApi(url, 'GET', null, null)
+        // const noAuction = await callApi("api/newspost/user/?category=2", 'GET', null, null)
+       thong.total = au.data
+    }
+    totalStaticial()
+
+    const category = () =>{
+        thong.total && thong.total.filter(d => d.category.id === 1 ).map(res => {
+            thong.auction = res
+        })
+        thong.total && thong.total.filter(d => d.category.id === 2 ).map(res => {
+            thong.noAuction = res
+        })
+    }
+        category()
     return (
         <>
             <Paper className="container" style={{marginTop: "150px"}}>
@@ -48,7 +63,7 @@ const Statitical = () => {
                                 <div className={classes.tong}>
                                     <Avatar className={classes.large} style={{backgroundColor: "#2d9898"}}><Gavel /></Avatar>
                                 </div>
-                                <h2 className={classes.tong}>3 Bài</h2>
+                                <h2 className={classes.tong}>{thong.auction.total} Bài</h2>
                                 <h5 className={classes.tong}>Auction</h5>
                             </div>
                         </Paper>
@@ -59,7 +74,7 @@ const Statitical = () => {
                                 <div className={classes.tong}>
                                     <Avatar className={classes.large} style={{backgroundColor: "#e8bd39"}}><EventNote /></Avatar>
                                 </div>
-                                <h2 className={classes.tong}>10 Bài</h2>
+                                <h2 className={classes.tong}>{thong.noAuction.total} Bài</h2>
                                 <h5 className={classes.tong}>No auction</h5>
                             </div>
                         </Paper>
@@ -70,7 +85,8 @@ const Statitical = () => {
                                 <div className={classes.tong}>
                                     <Avatar className={classes.large} style={{backgroundColor: "#4caf50"}}><EventAvailable /></Avatar>
                                 </div>
-                                <h2 className={classes.tong}>3 emtions</h2>
+                                {thong.auction && thong.noAuction ? <h2 className={classes.tong}>{thong.auction.data.emotions.length + thong.noAuction.data.emotions.length} emtions</h2>: ""}
+                                
                                 <h5 className={classes.tong}>emtions</h5>
                             </div>
                         </Paper>
@@ -81,7 +97,8 @@ const Statitical = () => {
                                 <div className={classes.tong}>
                                     <Avatar className={classes.large} style={{backgroundColor: "#e91e6382"}}><EventBusy /></Avatar>
                                 </div>
-                                <h2 className={classes.tong}>25 comments</h2>
+                                {thong.auction && thong.noAuction ? <h2 className={classes.tong}>{thong.auction.data.comment?.length + thong.noAuction.data.comment?.length} comments</h2>: ""}
+                                
                                 <h5 className={classes.tong}>comments</h5>
                             </div>
                         </Paper>
@@ -91,7 +108,7 @@ const Statitical = () => {
                 <Grid container spacing={3}>
 
                     <Grid item xs={12} sm={8}>
-                        <Paper className={classes.paper}><GroupedBar></GroupedBar></Paper>
+                        <Paper className={classes.paper}><GroupedBar ></GroupedBar></Paper>
                     </Grid>
                     <Grid item xs={12} sm={4}>
                         <Paper className={classes.paper}><DoughnutChart></DoughnutChart></Paper>
