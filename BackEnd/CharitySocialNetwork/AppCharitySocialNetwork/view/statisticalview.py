@@ -58,21 +58,27 @@ class StatisticalViewSet(GenericViewSet):
 
         if type(year) is int:
             queryset = queryset or self.get_queryset()
-            data = []
-
+            emotions = []
+            comment = []
+            month = []
+            post = []
             post_month = [i.month for i in queryset.filter(created_date__year=year).dates("created_date", "month")]
-
             for m in post_month:
                 posts = queryset.filter(created_date__year=year, created_date__month=m)
                 # có tất cả bìa viết
                 # lấy tất cả emotion theo bài viết
                 count_emotion = posts.annotate(count_emotion=Count("emotionpost")).values("count_emotion")
                 count_comment = posts.annotate(count_comment=Count("comment")).values("count_comment")
-                data.append(
-                    {
-                        "month": m,
-                        "posts": posts.count(),
-                        "emotions": sum(i.get("count_emotion") for i in count_emotion),
-                        "comment": sum(i.get("count_comment") for i in count_comment)
-                    })
+
+                emotions.append(sum(i.get("count_emotion") for i in count_emotion))
+                comment.append(sum(i.get("count_comment") for i in count_comment))
+                month.append(m)
+                post.append(posts.count())
+
+            data = {
+                "month": month,
+                "posts": post,
+                "emotions": emotions,
+                "comment": comment
+            }
             return data
