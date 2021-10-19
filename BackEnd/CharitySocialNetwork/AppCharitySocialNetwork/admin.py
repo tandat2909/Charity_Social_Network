@@ -1,25 +1,17 @@
-import datetime
-
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django import forms
 from django.contrib import admin
-from django.core import serializers
-from django.db.models import Count, Q, QuerySet, ValueRange, RowRange, F, Func, Window, Exists, Subquery
-from django.db.models.functions import *
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
-from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.views import redirect_to_login
-from django.http import HttpResponse
+from django.db.models import Count, Q
+from django.http import JsonResponse
 from django.template.response import TemplateResponse
 from django.urls import path
-from django.utils.translation import gettext, gettext_lazy as _
 from django.utils.safestring import mark_safe
-from oauth2_provider.models import Application
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status
-from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
-from django.http import JsonResponse
+
 from .models import *
 
 

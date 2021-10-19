@@ -4,7 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from ..models import AuctionItem
-from ..serializers import AuctionItemSerializer, AuctionItemViewSerializer, OrderViewSerializer
+from ..serializers import AuctionItemSerializer, AuctionItemViewSerializer, OrderViewSerializer, \
+    RegisterAuctionSerializer
 from ..view.baseview import BaseViewAPI
 from rest_framework.viewsets import *
 from rest_framework.generics import *
@@ -102,3 +103,13 @@ class AuctionViewSet(BaseViewAPI, GenericViewSet, RetrieveAPIView):
     def order(self, request, **kwargs):
         orders_of_user = request.user.auctionitem_set.all()
         return Response(OrderViewSerializer(orders_of_user, many=True).data, status=status.HTTP_200_OK)
+
+    @action(methods=["GET"], detail=True, url_path="register")
+    def register(self, request, pk, **kwargs):
+        if self.is_instance_of_user(request, self.get_object().post):
+            return Response({"error": "Bạn là chủ bài viết không cần đăng ký đấu giá"},
+                            status=status.HTTP_404_NOT_FOUND)
+        serializer = RegisterAuctionSerializer(data={"user": request.user.pk, "auction_item": pk})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -6,8 +6,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from ..models import Comment, EmotionComment, EmotionType
-from ..serializers import CommentSerializer, CommentCreateSerializer, \
-    EmotionCommentSerializer
+from ..serializers import CommentSerializer, CommentCreateSerializer, EmotionCommentSerializer
 from ..view.baseview import BaseViewAPI
 from ..view.emotionview import EmotionViewBase
 

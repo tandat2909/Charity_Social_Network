@@ -1,15 +1,12 @@
 import datetime
 
-from django.db.models import Q, Sum, Count, QuerySet
+from django.db.models import Count
 from rest_framework import permissions, status
 from rest_framework.decorators import action
-from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
-from django.http import HttpResponse
 
-from ..models import NewsPost, Comment, NewsCategory
+from ..models import NewsPost, NewsCategory
 
 
 class StatisticalViewSet(GenericViewSet):
@@ -74,7 +71,6 @@ class StatisticalViewSet(GenericViewSet):
                 comment.append(sum(i.get("count_comment") for i in count_comment))
                 month.append(m)
                 post.append(posts.count())
-
             data = {
                 "month": month,
                 "posts": post,

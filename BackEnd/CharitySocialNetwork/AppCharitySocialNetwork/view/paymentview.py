@@ -64,13 +64,13 @@ class PayViewSet(GenericViewSet, ListAPIView, BaseViewAPI):
             instance_auction_item: AuctionItem = AuctionItem.objects.get(id=auction_item_id)
             # kiểm tra hóa đơn có tồn tại hay không và kiểm tra user đang đăng nhập hiện tại có phải user chiến thắng không
             if instance_auction_item.is_paid():
-                return Response({"error": "Hóa đơn được thanh toán"},status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "Hóa đơn được thanh toán"}, status=status.HTTP_404_NOT_FOUND)
             # if instance_auction_item.
             if instance_auction_item.receiver.pk is not request.user.pk:
                 return Response({"error": "Xin lỗi. Bạn không phải là người chiến thắng"},
                                 status=status.HTTP_404_NOT_FOUND)
             if Transaction.objects.filter(auction_item_id=instance_auction_item.pk).exists():
-                return Response({"error": "Hóa đơn đã được thanh toán"},status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "Hóa đơn đã được thanh toán"}, status=status.HTTP_404_NOT_FOUND)
 
             if settings.DEBUG is False:
                 client_id = settings.PAYPAL_PRODUCT.get('PAYPAL_RECEIVED', None).get("client_id", None)

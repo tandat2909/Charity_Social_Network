@@ -8,10 +8,8 @@ from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
-from ..models import Notification, Comment, NewsPost, EmotionType, \
-    EmotionPost, AuctionItem, HistoryAuction
-from ..serializers import EmotionStatisticalSerializer, EmotionPostSerializer, HistoryAuctionCreateSerializer, \
-    HistoryAuctionSerializer
+from ..models import Notification, Comment, NewsPost, EmotionType, AuctionItem, HistoryAuction
+from ..serializers import EmotionStatisticalSerializer, EmotionPostSerializer, HistoryAuctionSerializer
 
 
 class BaseViewAPI:

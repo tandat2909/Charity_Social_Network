@@ -37,16 +37,6 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
             return NotificationSerializer
         return UserSerializer
 
-    # def create(self, request, *args, **kwargs):
-    #     print(request.__dict__)
-    #     file = request.FILES.get("avatar")
-    #     file_name = str(file)
-    #     with default_storage.open('images/' + file_name, 'wb+') as destination:
-    #         for chunk in file.chunks():
-    #             destination.write(chunk)
-    #         print(destination.path)
-    #     return super().create(request, *args, **kwargs)
-
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'change_password', ]:
             return [PermissionUserChange(), ]
@@ -80,10 +70,10 @@ class UserView(BaseViewAPI, CreateModelMixin, UpdateModelMixin, GenericViewSet):
     # @method_decorator(vary_on_headers("Authorization", ))
     @action(methods=["GET"], detail=False, url_path="profile", name="profile")
     def profile(self, request, *args, **kwargs):
-        if request.user.is_superuser or request.user.is_staff:
-            pk = kwargs.get("id")
-            if pk:
-                return Response(UserSerializer(self.queryset.get(pk=pk)).data, status.HTTP_200_OK)
+        # if request.user.is_superuser or request.user.is_staff:
+        #     pk = kwargs.get("id")
+        #     if pk:
+        #         return Response(UserSerializer(self.queryset.get(pk=pk)).data, status.HTTP_200_OK)
         return Response(UserSerializer(request.user, context={
             'request': request
         }).data, status.HTTP_200_OK)

@@ -6,10 +6,6 @@ from cloudinary.models import CloudinaryField
 from ckeditor.fields import RichTextField
 from django.conf import settings
 
-
-# Create your models here.
-
-
 class ModelBase(models.Model):
     name = models.CharField(max_length=255)
     image = CloudinaryField('image', null=True, blank=True)
@@ -43,8 +39,6 @@ class User(AbstractUser):
     birthday = models.DateField(null=True)
     gender = models.CharField(max_length=10, choices=typeGender, default=0)
 
-    # notifications = models.ManyToManyField('Notification', blank=True)
-
     @property
     def get_url_image(self):
         return self.avatar.url
@@ -70,10 +64,6 @@ class NewsPost(ModelBase):
     category = models.ForeignKey(NewsCategory, on_delete=models.SET_NULL, null=True, related_name='posts')
     hashtag = models.ManyToManyField('Hashtag', blank=True)
     is_show = models.BooleanField(default=False, help_text="Chỉ người duyệt bài mới cho phép thay đổi")
-
-    # comments = models.ManyToManyField('Comment', blank=True, related_query_name="comments")
-    # reports = models.ManyToManyField('ReportPost', blank=True, related_query_name="reports")
-    # emotions = models.ManyToManyField("EmotionPost", blank=True, related_query_name="emotions")
 
     def __str__(self):
         return self.title
@@ -211,60 +201,6 @@ class ReportUser(ActionBase):
                     content=self.content, date=self.created_date)
 
 
-#
-# class Comment(ModelBase):
-#     name = None
-#     image = None
-#     description = None
-#     content = models.TextField()
-#     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-#     comment_child = models.ManyToManyField('Comment', blank=True)
-#     emotions = models.ManyToManyField("EmotionComment", blank=True, related_query_name="emotions")
-#
-#     def __str__(self):
-#         return self.content
-
-#
-# class OptionReport(models.Model):
-#     content = models.CharField(max_length=255)
-#
-#     def __str__(self):
-#         return self.content
-#
-#
-# class ReportPost(ModelBase):
-#     name = None
-#     description = None
-#     content = models.TextField(null=True, blank=True)
-#     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user')
-#     post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, related_name='post')
-#     reason = models.ForeignKey(OptionReport, on_delete=models.SET_NULL, null=True)
-#
-#     def __str__(self):
-#         return 'Nội dung Report:\n' \
-#                'Bài viết: {title} \n' \
-#                'Lý do:{reason}\n' \
-#                'Nội dung: {content}\n' \
-#             .format(title=self.post.title, reason=self.reason, content=self.content)
-#
-#
-# class ReportUser(ModelBase):
-#     name = None
-#     description = None
-#     content = models.TextField()
-#     user_report = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_report')
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     reason = models.ForeignKey(OptionReport, on_delete=models.SET_NULL, null=True)
-#
-#     def __str__(self):
-#         return 'Nội dung Report:\n' \
-#                'User: {fullname} \n' \
-#                'Lý do:{reason}\n' \
-#                'Nội dung: {content}\n' \
-#             .format(fullname=self.user.get_full_name() or self.user.username, reason=self.reason.content,
-#                     content=self.content)
-
-
 class Transaction(ModelBase):
     name = None
     PENDING, COMPLETED = range(2)
@@ -313,44 +249,6 @@ class Transaction(ModelBase):
     def status_str(self):
         return settings.STATUS_PAYMENT[self.status][1]
 
-
-#
-# class Emotion(ModelBase):
-#     image = None
-#     description = None
-#     name = None
-#     emotion_type = models.ForeignKey(EmotionType,
-#                                      on_delete=models.SET_NULL,
-#                                      null=True,
-#
-#                                      )
-#     author = models.ForeignKey(User, on_delete=models.CASCADE, related_query_name='author')
-#
-#     # một tài khoản có thể like nhiều bài viết mà mỗi bài viết chỉ like một lần
-#     # lấy tất cả các like của bài viết a
-#     class Meta:
-#         abstract = True
-#
-#     def __str__(self):
-#         return self.author.get_username() + " : " + self.author.get_full_name() + " -> " + self.emotion_type.name
-#
-#
-# class EmotionPost(Emotion):
-#     post = models.ForeignKey(NewsPost, on_delete=models.CASCADE, related_name="emotion")
-#
-#     class Meta:
-#         ordering = ['emotion_type', "post"]
-#         unique_together = ("author", "post")
-#
-#
-# class EmotionComment(Emotion):
-#     comment = models.ForeignKey(Comment, on_delete=models.CASCADE)
-#
-#     class Meta:
-#         ordering = ["emotion_type", "comment"]
-#         unique_together = ("author", "comment")
-
-
 class Hashtag(ModelBase):
     image = None
 
@@ -393,18 +291,14 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["-created_date"]
-        # unique_together = ("user", "id")
 
-# class NotificationUser(models.Model):
-#     notification = models.ForeignKey(Notification, on_delete=models.CASCADE, null=False, blank=False,
-#                                      help_text="Chọn thông báo cho người dùng", related_name="users")
-#     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False,
-#                              help_text="Chọn người dùng cần thông báo",related_name="notifications")
-#     # url = models.CharField(max_length=255)
-#     new = models.BooleanField(default=True)
-#     active = models.BooleanField(default=True)
-#     created_date = models.DateTimeField(auto_now_add=True)
-#
-#     class Meta:
-#         ordering = ["-created_date", "new"]
-#         unique_together = ("user", "notification")
+
+class RegisterAuction(models.Model):
+    auction_item = models.ForeignKey(AuctionItem, on_delete=models.CASCADE, null=False, blank=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False, help_text={"error":"m"})
+    created_date = models.DateTimeField(auto_now_add=True)
+    update_date = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ("user", "auction_item")

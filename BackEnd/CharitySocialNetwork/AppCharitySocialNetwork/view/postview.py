@@ -1,26 +1,15 @@
-import datetime
-import decimal
-import re
-from collections import OrderedDict
-
 import cloudinary
 import rest_framework
-from MySQLdb import IntegrityError
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db.models import Q
-from django.http import QueryDict
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.mixins import ListModelMixin
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser, OR
 from rest_framework.response import Response
-from rest_framework.serializers import Serializer
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from ..filters import DjangoFilterBackendCustom
 from ..models import NewsPost, AuctionItem, HistoryAuction, Comment, \
@@ -29,8 +18,7 @@ from ..paginators import PostPagePagination, CommentPagePagination, ImagePagePag
 from ..permission import PermissionUserMod
 from ..serializers import PostListSerializer, EmotionPostSerializer, \
     PostCreateSerializer, PostChangeFieldIsShow, CommentSerializer, CommentCreateSerializer, ReportPostCreateSerializer, \
-    PostSerializer, PostDetailSerializer, ReportPostSerializer, AuctionItemSerializer, HistoryAuctionCreateSerializer, \
-    CategoryPostSerializer, HashtagsSerializer, UserViewModelSerializer, HistoryAuctionSerializer, \
+    PostSerializer, PostDetailSerializer, ReportPostSerializer, CategoryPostSerializer, HistoryAuctionSerializer, \
     AuctionItemViewSerializer, PostImageSerializer
 from ..view.baseview import BaseViewAPI, EmotionViewBase
 

@@ -1,15 +1,9 @@
 import django.conf
 import rest_framework.exceptions
-from cloudinary import CloudinaryResource, models as cloudmodels
-from cloudinary.forms import CloudinaryJsFileField, CloudinaryUnsignedJsFileField
-from django.conf import settings
-from graphene_django import DjangoObjectType
-from rest_framework import serializers
-from rest_framework.serializers import *
 from django.contrib.auth.models import Group, Permission
+from rest_framework.serializers import *
 from .models import *
 from .validators import PasswordValidator
-from oauth2_provider.models import Grant
 
 
 class BaseMeta:
@@ -555,6 +549,16 @@ class OrderViewSerializer(ModelSerializer):
     time_offer = DateTimeField(source="time_offer_of_receiver")
     transaction = TransactionSerializer()
     author = CharField(source="post.user.full_name")
+
     class Meta:
         model = AuctionItem
-        fields = ["id", 'price', "status", "item", "post",'author', "time_win", "time_offer", 'image', 'transaction']
+        fields = ["id", 'price', "status", "item", "post", 'author', "time_win", "time_offer", 'image', 'transaction']
+
+
+class RegisterAuctionSerializer(ModelSerializer):
+    class Meta:
+        model = RegisterAuction
+        fields = ["id", "user", "auction_item", "created_date"]
+
+
+

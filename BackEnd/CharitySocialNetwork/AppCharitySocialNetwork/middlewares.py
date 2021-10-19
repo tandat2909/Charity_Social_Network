@@ -1,16 +1,7 @@
-from collections import OrderedDict
-
-from django.contrib.auth.middleware import AuthenticationMiddleware
-from django.http import QueryDict, Http404, HttpResponse, JsonResponse
-from django.middleware.security import SecurityMiddleware
-from django.utils.deprecation import MiddlewareMixin
-from oauth2_provider.backends import OAuthLibCore
-from django.contrib.auth import login
-from oauth2_provider.contrib.rest_framework import OAuth2Authentication
-from oauth2_provider.middleware import OAuth2TokenMiddleware
-from oauth2_provider.oauth2_backends import get_oauthlib_core
-from oauth2_provider.models import Application
 from django.conf import settings
+from django.utils.deprecation import MiddlewareMixin
+from oauth2_provider.models import Application
+from oauth2_provider.oauth2_backends import get_oauthlib_core
 
 
 class GraphQLOAuth2TokenMiddleware(MiddlewareMixin):

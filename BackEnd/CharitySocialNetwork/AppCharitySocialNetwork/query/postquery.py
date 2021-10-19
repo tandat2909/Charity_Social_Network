@@ -1,14 +1,6 @@
 from graphene import *
 from ..graphene_types import *
 
-
-# class HashtagQuery:
-#     hashtags = List(HashtagObjectType)
-#
-#     def resolve_hashtags(self, info, **kwargs):
-#         return Hashtag.objects.filter(active=True)
-
-
 class PostQuery:
     posts = List(PostObjectType)
     post = Field(PostObjectType, post_id=ID(required=True))
